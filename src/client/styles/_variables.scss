@@ -1,3 +1,27 @@
+// root font size
+$root-font-size: 10px; // 1rem = 10px;
 
-$fa-font-path : '../../node_modules/font-awesome/fonts';
+// Colors
 $main_color: #3fbae8;
+$error_color: #d9534f;
+$success-color: #449d44;
+
+// Scaffolding
+$base-border-radius: 0.5rem;
+
+// GRID VARS
+$num-columns: 12;
+
+$gutter: 1rem;
+$outer-gutter: 2rem;
+$row-compensation: -0.5rem;
+$col-compensation: 0.5rem;
+
+$screen-xs-min: 0;
+$screen-sm-min: 76.8rem;
+$screen-md-min: 99.2rem;
+$screen-lg-min: 120rem;
+
+$container-sm: 77.8rem;
+$container-md: 100.2rem;
+$container-lg: 121rem;

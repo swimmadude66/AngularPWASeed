@@ -1,0 +1,14 @@
+@import '../../styles/_variables';
+
+
+input.has-error {
+    margin-bottom: 0.3rem;
+}
+
+.error-text {
+    color: $error_color;
+    font-size: 1.2rem;
+    line-height: 1.2rem;
+    text-align: right;
+    margin: 0 0 0.5rem 0;
+}

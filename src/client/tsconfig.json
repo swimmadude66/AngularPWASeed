@@ -5,6 +5,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "noEmitHelpers": true,
+        "importHelpers": true,
         "noEmitOnError": true,
         "lib": [
             "es6",
@@ -14,12 +15,11 @@
         "baseUrl": ".",
         "paths": {
             "@components/*": ["components/*", "components/index"],
+            "@core/*": ["core/*", "core/index"],
+            "@guards/*": ["guards/*", "guards/index"],
             "@models/*": ["models/*", "models/index"],
             "@modules/*": ["modules/*", "modules/index"],
-            "@services/*": ["services/*", "services/index"],
-            "*": [
-                "../../node_modules/*"
-            ]
+            "@services/*": ["services/*", "services/index"]
         }
     },
     "exclude": [

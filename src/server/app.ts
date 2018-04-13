@@ -8,22 +8,31 @@ import * as compress from 'compression';
 import * as express from 'express';
 import * as morgan from 'morgan';
 import * as dotenv from 'dotenv';
-import { DatabaseService } from './services/db';
-import { Services } from './models/config';
+import * as userAgent from 'express-useragent';
+import {Config} from './models/config';
+import {DatabaseService} from './services/db';
+import {SessionManager} from './services/session';
 
 dotenv.config({silent: true});
 
-const APP_CONFIG: any = {
-  environment: process.env.ENVIRONMENT || 'short',
-  cookie_name: process.env.COOKIE_NAME || '__cc',
-  cookie_secret: process.env.COOKIE_SECRET || 'cookie_secret',
-  port: process.env.NODE_PORT || 3000,
-  log_level: process.env.MORGAN_LOG_LEVEL || 'dev',
-  client_root: process.env.CLIENT_ROOT || join(__dirname, '../client/'),
+/*-------- Services --------*/
+const db = new DatabaseService();
+const sessionManager = new SessionManager(db);
+
+const APP_CONFIG: Config = {
+    environment: process.env.ENVIRONMENT || 'dev',
+    cookie_name: process.env.COOKIE_NAME || '__cookie_name',
+    cookie_secret: process.env.COOKIE_SECRET || 'cookie_secret',
+    port: (+process.env.NODE_PORT) || 3000,
+    log_level: process.env.MORGAN_LOG_LEVEL || 'short',
+    client_root: process.env.CLIENT_ROOT || join(__dirname, '../client/'),
+    db,
+    sessionManager
 };
 
 const app = express();
 app.use(compress());
+app.use(userAgent.express());
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cookieParser(APP_CONFIG.cookie_secret));
@@ -48,15 +57,8 @@ if (process.env.HTTPS) {
     server = createServer(app);
 }
 
-/*-------- Services --------*/
-const db = new DatabaseService();
-
-const SERVICES: Services = {
-    db,
-};
-
 /*-------- API --------*/
-app.use('/api', require('./routes/api')(APP_CONFIG, SERVICES));
+app.use('/api', require('./routes/api')(APP_CONFIG));
 
 /*------- Angular client on Root ------- */
 app.set('view engine', 'html');

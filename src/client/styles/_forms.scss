@@ -1,0 +1,44 @@
+@import '_variables';
+
+input, select, textarea {
+    font-family: 'Lato', sans-serif;
+    box-sizing: border-box;
+    display: block;
+    border: 1px solid #000;
+    border-radius: $base-border-radius;
+    box-shadow: 0.2rem 0.1rem 0.1rem #666;
+    height: 3.5rem;
+    width: 100%;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    font-size: 1.5rem;
+    outline: none;
+
+    &:focus, &:active {
+        outline: none
+    }
+    
+    &::placeholder {
+        color: #999;
+    }
+
+    &:disabled {
+        background-color: #efefef;
+        color: #999;
+        cursor: not-allowed;
+    }
+
+    &.has-error {
+        border: 0.1rem solid $error_color;
+    }
+}
+
+label {
+    font-family: 'Lato', sans-serif;
+    font-size: 1.8rem;
+    font-weight: bold;
+
+    &.has-error {
+        color: $error_color;
+    }
+}

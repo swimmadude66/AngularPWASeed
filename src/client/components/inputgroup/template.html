@@ -1,0 +1,19 @@
+<div class="input-group">
+    <label [attr.for]="id" [ngClass]="{'has-error': !!errors && blurred}">
+        {{label}}
+    </label>
+    <input
+        #input
+        class="form-control"
+        [name]="name"
+        [attr.id]="id" 
+        [attr.type]="type" 
+        [attr.placeholder]="placeholder"
+        [attr.autocomplete]="autocomplete"
+        [ngClass]="{'has-error': !!errors && blurred}"
+        [disabled]="disabled"
+        (blur)="onBlur()"
+        (input)="onChange($event)"
+    >
+    <p class="error-text" *ngIf="!!errors && blurred">{{getError()}}</p>
+</div>

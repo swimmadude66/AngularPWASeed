@@ -1,4 +1,30 @@
-@import '~bootstrap/scss/bootstrap';
+@import '~normalize-scss/sass/_normalize';
+// point to fa-fonts before import
+$fa-font-path : '../../node_modules/font-awesome/fonts';
+@import '~font-awesome/scss/font-awesome';
 
 @import 'styles/_variables';
-@import '~font-awesome/scss/font-awesome';
+@import 'styles/_grid';
+@import 'styles/_helpers';
+@import 'styles/_buttons';
+@import 'styles/_forms';
+@import 'styles/_font';
+
+html, body {
+    height: 100%; // Default to full page
+    font-size: $root-font-size; // base font-size for rem
+    min-width: 32rem; // set a hard stop of minimum width
+}
+body {
+    box-sizing: border-box;
+}
+
+a, p, span, div {
+    font-family: 'Lato', sans-serif;
+    font-size: 1.6rem;
+}
+
+.error-text {
+    color: $error_color;
+    font-size: 1.4rem;
+}

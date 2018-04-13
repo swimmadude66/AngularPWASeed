@@ -2,13 +2,15 @@ var path = require('path');
 var webpack = require('webpack');
 var workbox = require('workbox-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var HtmlWebpackExcludeAssetsPlugin = require('html-webpack-exclude-assets-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var uncss = require('postcss-uncss');
+var autoprefixer = require('autoprefixer');
+var cssnano = require('cssnano');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
 var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
 var commonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
-var providePlugin = webpack.ProvidePlugin;
 
 module.exports = {
     entry: {
@@ -35,12 +37,21 @@ module.exports = {
                 use: [
                     {
                         loader: 'raw-loader'
-                    }, 
+                    },
                     {
-                        loader:'sass-loader',
+                        loader: 'postcss-loader',
                         options: {
-                            outputStyle: 'compressed'
+                            ident: 'postcss',
+                            plugins: function(loader){
+                                return [
+                                    autoprefixer({remove: false, flexbox: true}),
+                                    cssnano
+                                ]
+                            }
                         }
+                    },
+                    {
+                        loader:'sass-loader'
                     }
                 ]
             },
@@ -51,10 +62,7 @@ module.exports = {
                     fallback: 'style-loader',
                     use: [
                         {
-                            loader: 'css-loader',
-                            options: {
-                                minimize: true
-                            }
+                            loader: 'css-loader'
                         },
                         {
                             loader: 'postcss-loader',
@@ -62,23 +70,80 @@ module.exports = {
                                 ident: 'postcss',
                                 plugins: function(loader){
                                     return [
-                                        uncss({html: [path.join(__dirname, './src/client/index.html'), path.join(__dirname, './src/client/**/*.html')]})
+                                        uncss({
+                                            html: [path.join(__dirname, './src/client/index.html'), path.join(__dirname, './src/client/**/*.html')],
+                                            ignore: [/has-error/, /disabled/, /hover/, /active/, /focus/]
+                                        }),
+                                        autoprefixer({remove: false, flexbox: true}),
+                                        cssnano
                                     ]
                                 }
                             }
                         },
-                        {loader:'sass-loader'}
+                        {
+                            loader:'sass-loader'
+                        }
                     ]
                 })
             },
+            {
+                test: /\.svg$/,
+                use: [
+                    {
+                        loader: 'file-loader'
+                    },
+                    {
+                        loader: 'svgo-loader',
+                        options: {
+                            plugins: [
+                                {convertColors: {shorthex: false}},
+                                {cleanupAttrs: true},
+                                {removeDoctype: true},
+                                {removeXMLProcInst: true},
+                                {removeComments: true},
+                                {removeMetadata: true},
+                                {removeTitle: true},
+                                {removeDesc: true},
+                                {removeUselessDefs: true},
+                                {removeXMLNS: true},
+                                {removeEditorsNSData: true},
+                                {removeEmptyAttrs: true},
+                                {removeHiddenElems: true},
+                                {removeEmptyText: true},
+                                {removeEmptyContainers: true},
+                                {removeViewBox: true},
+                                {cleanupEnableBackground: true},
+                                {minifyStyles: true},
+                                {convertStyleToAttrs: true},
+                                {convertPathData: true},
+                                {convertTransform: true},
+                                {removeUnknownsAndDefaults: true},
+                                {removeNonInheritableGroupAttrs: true},
+                                {removeUselessStrokeAndFill: true},
+                                {removeUnusedNS: true},
+                                {cleanupIDs: true},
+                                {cleanupNumericValues: true},
+                                {cleanupListOfValues: true},
+                                {moveElemsAttrsToGroup: true},
+                                {moveGroupAttrsToElems: true},
+                                {collapseGroups: true},
+                                {removeRasterImages: true},
+                                {mergePaths: true},
+                                {convertShapeToPath: true},
+                                {sortAttrs: true},
+                            ]
+                        }
+                    }
+                ]
+            },
             // fonts
             {
-                test: /\.((ttf)|(woff(2?))|(eot)|(svg))/,
+                test: /\.((ttf)|(woff(2?))|(eot))/,
                 loader: 'file-loader'
             },
             // images
             {
-                test: /\.((jpg)|(png)|(gif)|(bmp)|(ico)|(svg))/,
+                test: /\.((jpg)|(png)|(gif)|(bmp)|(ico))/,
                 loader: 'file-loader',
                 exclude: [path.join(__dirname, './src/client/assets')]
             },
@@ -90,11 +155,13 @@ module.exports = {
         ]
     },
     plugins: [
+        new HtmlWebpackExcludeAssetsPlugin(),
         new HtmlWebpackPlugin({
             filename: path.join(__dirname, './dist/client/index.html'),
             template: path.join(__dirname, './src/client/index.html'),
             inject: 'body',
             hash: true,
+            excludeAssets: [/styles\..*js/i],
             chunksSortMode: function(a,b) {
                 if (a.names[0] === 'common') {
                     return -1;
@@ -114,25 +181,15 @@ module.exports = {
             mainPath: path.join(__dirname, './src/client/main.ts'),
             typeChecking: false,
         }),
-        new providePlugin({
-            $: 'jquery',
-            jQuery: 'jquery',
-            'window.$': 'jquery',
-            'window.jQuery': 'jquery',
-            'window.jquery': 'jquery',
-            'window.Tether': 'tether',
-            'Tether': 'tether',
-        }),
         new commonsChunkPlugin({
             name: 'common',
             minChunks: 2,
             async: false,
-            children: false,
-            chunks: ['app', 'vendor']
+            children: false
         }),
         new ExtractTextPlugin({
             allChunks: true, 
-            filename: 'styles.[contenthash].min.css'
+            filename: 'styles.min.css'
         }),
         new CircularDependencyPlugin({
             exclude: /node_modules/,
@@ -148,7 +205,7 @@ module.exports = {
             swDest: 'sw.js',
             clientsClaim: true,
             skipWaiting: true,
-            include: [/assets/, /.*\.((js)|(html)|(css)|(jpg)|(png)|(svg)|(woff(2?))|(eot)|(ttf))/],
+            include: [/assets/, /.*\.((html)|(css)|(jpg)|(png)|(svg)|(woff(2?))|(eot)|(ttf))/, /((common)|(vendor)|(app))\.min\.js/],
             exclude: [/manifest/],
             runtimeCaching: [{
                 // Match any same-origin request that contains 'api'.
@@ -166,7 +223,7 @@ module.exports = {
                   },
                   // Configure which responses are considered cacheable.
                   cacheableResponse: {
-                    statuses: [0, 200]
+                    statuses: [0, 200, 204]
                   }
                 }
             }]

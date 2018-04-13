@@ -1,0 +1,58 @@
+@import '_variables';
+
+@mixin button($background, $text) {
+    background-color: $background;
+    color: $text;
+    border: none;
+    &:hover {
+        background-color: darken($background, 5%);
+    }
+}
+
+@mixin button-inverse($background, $text) {
+    @include button($text, $background);
+    border: 0.1rem solid $background;
+}
+
+button {
+    box-sizing: border-box;
+    display: block;
+    cursor: pointer;
+
+    &:disabled {
+        background-color: #ccc !important;
+        color: #999;
+        cursor: not-allowed;
+    }
+}
+
+.btn {
+    border-radius: $base-border-radius;
+    padding: 0.5rem 1rem;
+    font-size: 2rem;
+    width: 100%;
+    @media(min-width: $screen-md-min) {
+        width: unset;
+    }
+}
+
+.btn-success {
+    @include button($success-color, #fff);
+}
+.btn-error {
+    @include button($error-color, #fff);
+}
+.btn-primary {
+    @include button($main-color, #fff);
+}
+.btn-success-inverse {
+    @include button-inverse($success-color, #fff);
+}
+.btn-error-inverse {
+    @include button-inverse($error-color, #fff);
+}
+.btn-primary-inverse {
+    @include button-inverse($main-color, #fff);
+}
+
+

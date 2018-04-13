@@ -1,12 +1,10 @@
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
-import {FormsModule} from '@angular/forms';
 import {BrowserModule} from '@angular/platform-browser';
-import {CommonModule} from '@angular/common';
-import {HttpClientModule} from '@angular/common/http';
-import {AppComponent, DemoComponent} from '@components/';
-import {ItemService} from '@services/';
 import {SharedModule} from '@modules/shared';
+import {AppComponent, LoginComponent} from '@components/';
+import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/';
+import {AuthService} from '@services/';
 
 @NgModule({
     bootstrap: [
@@ -15,19 +13,22 @@ import {SharedModule} from '@modules/shared';
     imports: [
         BrowserModule,
         SharedModule,
-        HttpClientModule,
         RouterModule.forRoot(
             [
-                {path: '', pathMatch: 'full', component: DemoComponent},
+                {path: 'login', canActivate: [NotLoggedInGuard], component: LoginComponent},
+                {path: 'signup', canLoad: [NotLoggedInGuard], canActivateChild: [NotLoggedInGuard], loadChildren: './routes/+signup#SignupLazyModule'},
+                {path: '', canLoad: [IsLoggedInGuard], canActivateChild: [IsLoggedInGuard], loadChildren: './routes/+demo#DemoLazyModule'},
             ]
         )
     ],
     declarations: [
         AppComponent,
-        DemoComponent
+        LoginComponent
     ],
     providers: [
-        ItemService
+        AuthService,
+        IsLoggedInGuard,
+        NotLoggedInGuard
     ]
 })
 export class AppModule {}

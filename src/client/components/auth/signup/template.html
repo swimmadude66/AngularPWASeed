@@ -1,0 +1,43 @@
+<div class="container h-100">
+    <div class="row page-row h-100">
+        <div class="col-xs-12 col-sm-8 col-md-6 mx-auto">
+            <div class="signup-form-container">
+                <h1 class="form-title">Sign up</h1>
+                <form [formGroup]="form" (ngSubmit)="signup()">
+                    <input-group
+                        id="txtEmail"
+                        type="email"
+                        name="email"
+                        [formControl]="formControls['email']"
+                        [errors]="formControls['email']?.errors"
+                        label="Email"
+                        placeholder="Email"
+                        autocomplete="email"
+                    ></input-group>
+                    <input-group
+                        id="txtPassword"
+                        type="password"
+                        name="password"
+                        [formControl]="formControls['password']"
+                        [errors]="formControls['password']?.errors"
+                        label="New Password"
+                        placeholder="New Password"
+                        autocomplete="new-password"
+                    ></input-group>
+                    <input-group
+                        id="txtConfirmPassword"
+                        type="password"
+                        name="password"
+                        [formControl]="formControls['confirmPassword']"
+                        [errors]="formControls['confirmPassword']?.errors"
+                        label="Confirm Password"
+                        placeholder="Confirm Password"
+                        autocomplete="new-password"
+                    ></input-group>
+                    <button class="btn btn-success d-inlineblock" type="submit">Sign up</button>
+                    <a [routerLink]="['/login']" class="d-inlineblock pull-right">Log in instead</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
