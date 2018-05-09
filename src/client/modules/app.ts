@@ -3,8 +3,7 @@ import {RouterModule} from '@angular/router';
 import {BrowserModule} from '@angular/platform-browser';
 import {SharedModule} from '@modules/shared';
 import {AppComponent, LoginComponent} from '@components/';
-import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/';
-import {AuthService} from '@services/';
+import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/'
 
 @NgModule({
     bootstrap: [
@@ -24,11 +23,6 @@ import {AuthService} from '@services/';
     declarations: [
         AppComponent,
         LoginComponent
-    ],
-    providers: [
-        AuthService,
-        IsLoggedInGuard,
-        NotLoggedInGuard
     ]
 })
 export class AppModule {}

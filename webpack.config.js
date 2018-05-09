@@ -10,9 +10,9 @@ var cssnano = require('cssnano');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
 var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
-var commonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 
 module.exports = {
+    mode: 'production', // default to prod
     entry: {
         'app': path.join(__dirname,'./src/client/main.ts'),
         'vendor': path.join(__dirname,'./src/client/vendor.ts'),
@@ -24,6 +24,14 @@ module.exports = {
     },
     resolve: {
         extensions: ['.ts', '.js', '.json', '.scss', '.css']
+    },
+    optimization: {
+        namedModules: true,
+        splitChunks: {
+            name: 'common',
+            minChunks: 2,
+        },
+        minimize: true
     },
     module: {
         rules: [
@@ -46,7 +54,7 @@ module.exports = {
                                 return [
                                     autoprefixer({remove: false, flexbox: true}),
                                     cssnano
-                                ]
+                                ];
                             }
                         }
                     },
@@ -70,13 +78,13 @@ module.exports = {
                                 ident: 'postcss',
                                 plugins: function(loader){
                                     return [
-                                        uncss({
-                                            html: [path.join(__dirname, './src/client/index.html'), path.join(__dirname, './src/client/**/*.html')],
-                                            ignore: [/has-error/, /disabled/, /hover/, /active/, /focus/]
-                                        }),
+                                        // uncss({
+                                        //     html: [path.join(__dirname, './src/client/index.html'), path.join(__dirname, './src/client/**/*.html')],
+                                        //     ignore: [/has-error/, /disabled/, /hover/, /active/, /focus/, /hidden/, /hide/, /show/, /^fa-/]
+                                        // }),
                                         autoprefixer({remove: false, flexbox: true}),
                                         cssnano
-                                    ]
+                                    ];
                                 }
                             }
                         },
@@ -155,7 +163,6 @@ module.exports = {
         ]
     },
     plugins: [
-        new HtmlWebpackExcludeAssetsPlugin(),
         new HtmlWebpackPlugin({
             filename: path.join(__dirname, './dist/client/index.html'),
             template: path.join(__dirname, './src/client/index.html'),
@@ -176,16 +183,11 @@ module.exports = {
                 }
             },
         }),
+        new HtmlWebpackExcludeAssetsPlugin(),
         new AotPlugin({
             tsConfigPath: path.join(__dirname, './src/client/tsconfig.json'),
             mainPath: path.join(__dirname, './src/client/main.ts'),
             typeChecking: false,
-        }),
-        new commonsChunkPlugin({
-            name: 'common',
-            minChunks: 2,
-            async: false,
-            children: false
         }),
         new ExtractTextPlugin({
             allChunks: true, 

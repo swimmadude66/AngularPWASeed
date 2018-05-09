@@ -8,11 +8,13 @@ import {
     ActivatedRouteSnapshot, 
     RouterStateSnapshot
 } from '@angular/router';
-import {Observable} from 'rxjs/Observable';
+import {Observable} from 'rxjs';
 import {tap, map} from 'rxjs/operators';
-import {AuthService} from '@services/*';
+import {AuthService} from '@services/';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class NotLoggedInGuard implements CanLoad, CanActivate, CanActivateChild {
     loggedIn: boolean;
 

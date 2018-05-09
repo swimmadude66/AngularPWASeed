@@ -1,4 +1,4 @@
-import {Observable} from 'rxjs/Rx';
+import {Observable} from 'rxjs';
 import {createPool, IPoolConfig, Pool, escape as mysqlEscape} from 'mysql';
 
 const NUMPERPAGE = 50;
