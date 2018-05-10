@@ -10,6 +10,7 @@ var cssnano = require('cssnano');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
 var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
+var NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
 
 module.exports = {
     mode: 'production', // default to prod
@@ -203,6 +204,9 @@ module.exports = {
                 to: path.join(__dirname, './dist/client/assets')
             }
         ]),
+        new NormalModuleReplacementPlugin(/environments\/environment/, function(resource) {
+            resource.request = resource.request.replace(/environment$/, `${config.mode === 'production' ? 'prodEnvironment':'devEnvironment'}`);
+        }),
         new workbox.GenerateSW({
             swDest: 'sw.js',
             clientsClaim: true,
