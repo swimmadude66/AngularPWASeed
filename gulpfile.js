@@ -3,7 +3,7 @@ var webpack         = require('webpack');
 var webpackConfig   = require('./webpack.config');
 var browserSync     = require('browser-sync-webpack-plugin');
 var ts_project	    = require('gulp-typescript').createProject('./src/server/tsconfig.json');
-var spawn            = require('child_process').spawn;
+var spawn           = require('child_process').spawn;
 var server_proc;
 
 gulp.task('compile-node', function(){
@@ -25,7 +25,26 @@ gulp.task('start-server', ['compile-node'], function(){
 
 gulp.task('webpack', function(done) {
     var config = webpackConfig;
-    config.mode = 'production';
+    process.env.BUILD_MODE = 'production';
+    config.plugins.push(
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false,
+                screw_ie8: true,
+                conditionals: true,
+                unused: true,
+                comparisons: true,
+                sequences: true,
+                dead_code: true,
+                evaluate: true,
+                if_return: true,
+                join_vars: true,
+            },
+            output: {
+                comments: false
+            }
+        })
+    );
     return webpack(config, function(err, stats){
         if (err) {
             console.error(err);
@@ -43,7 +62,7 @@ gulp.task('webpack', function(done) {
 
 gulp.task('webpack-watch', function() {
     var config = webpackConfig;
-    config.mode = 'development';
+    process.env.BUILD_MODE = 'development';
     config.watch = true;
     config.cache = true;
     config.bail = false;

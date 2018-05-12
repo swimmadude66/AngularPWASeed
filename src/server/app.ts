@@ -62,7 +62,7 @@ app.use('/api', require('./routes/api')(APP_CONFIG));
 
 /*------- Angular client on Root ------- */
 app.set('view engine', 'html');
-app.use(express.static(APP_CONFIG.client_root));
+app.use(express.static(APP_CONFIG.client_root, {maxAge: 0}));
 app.get('/*', function(req, res){
   return res.sendFile(join(APP_CONFIG.client_root, './index.html'));
 });
