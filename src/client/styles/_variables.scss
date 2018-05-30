@@ -18,10 +18,7 @@ $row-compensation: -0.5rem;
 $col-compensation: 0.5rem;
 
 $screen-xs-min: 0;
-$screen-sm-min: 76.8rem;
-$screen-md-min: 99.2rem;
-$screen-lg-min: 120rem;
-
-$container-sm: 77.8rem;
-$container-md: 100.2rem;
-$container-lg: 121rem;
+$screen-sm-min: 576px;
+$screen-md-min: 768px;
+$screen-lg-min: 992px;
+$screen-xl-min: 1200px;
