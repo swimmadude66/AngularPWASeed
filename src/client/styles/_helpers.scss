@@ -1,62 +1,172 @@
 @import '_variables';
 
-// height
-.h-100 {
-    height: 100%;
-}
-.h-75 {
-    height: 75%;
-}
-.h-50 {
-    height: 50%;
-}
-.h-25 {
-    height: 25%;
+$media-breakpoints: (
+    "xs": $screen-xs-min,
+    "sm": $screen-sm-min,
+    "md": $screen-md-min,
+    "lg": $screen-lg-min,
+    "xl": $screen-xl-min
+);
+
+// Grid Calculations
+@function col-width($numWidth) {
+    @return ($numWidth / $num-columns)* 100%;
 }
 
-// Margin and Padding
-.mx-auto {
+@mixin col($numWidth) {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    padding-left: $col-compensation;
+    padding-right: $col-compensation;
+    flex-basis: col-width($numWidth);
+    max-width: col-width($numWidth);
+}
+
+@mixin col-offset($numOffset) {
+    margin-left: col-width($numOffset);
+}
+
+@mixin content-start() {
+    justify-content: flex-start;
+    text-align: start;
+}
+@mixin content-center() {
+    justify-content: center;
+    text-align: center;
+}
+@mixin content-end() {
+    justify-content: flex-end;
+    text-align: end;
+}
+@mixin items-top() {
+    align-items: flex-start;
+}
+@mixin items-middle() {
+    align-items: center;
+}
+@mixin items-bottom() {
+    align-items: flex-end;
+}
+
+@mixin start() {
+    justify-content: flex-start;
+    text-align: start;
+}
+@mixin center() {
+    justify-content: center;
+    text-align: center;
+}
+@mixin end() {
+    justify-content: end;
+    text-align: end;
+}
+@mixin top() {
+    align-self: flex-start;
+}
+@mixin middle() {
+    align-self: center;
+}
+@mixin bottom() {
+    align-self: flex-end;
+}
+@mixin around() {
+    justify-content: space-around;
+}
+@mixin between() {
+    justify-content: space-between;
+}
+@mixin first() {
+    order: -1;
+}
+@mixin last() {
+    order: 1;
+}
+@mixin hidden() {
+    display: none;
+}
+@mixin visible() {
+    display: block;
+}
+
+// Top level
+.container-fluid, .container {
     margin-left: auto;
     margin-right: auto;
 }
-.my-auto {
-    margin-top: auto;
-    margin-bottom: auto;
+  
+.container-fluid {
+    padding-left: $outer-gutter;
+    padding-right: $outer-gutter;
 }
-.m-auto {
-    margin: auto;
+  
+.row {
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: $row-compensation;
+    margin-right: $row-compensation;
+
+    &.reverse {
+        flex-direction: row-reverse;
+    }
 }
-.px-auto {
-    padding-left: auto;
-    padding-right: auto;
-}
-.py-auto {
-    padding-top: auto;
-    padding-bottom: auto;
-}
-.p-auto {
-    padding: auto;
+.col-reverse {
+    flex-direction: column-reverse;
 }
 
-// display
-.d-flex {
-    display: flex;
-}
-.d-block {
-    display: block;
-}
-.d-inline{
-    display: inline;
-}
-.d-inlineblock {
-    display: inline-block;
-}
-.hidden {
-    display: none;
-}
-.pull-right {
-    float: right;
-}
-.pull-left {
-    float: left;
+@each $breakpoint, $media-var in $media-breakpoints {
+    @media (min-width: $media-var) {
+        .container {
+            width: $media-var + 10px;
+        }
+        .col-#{$breakpoint} {
+            flex-grow: 1;
+            flex-basis: 0;
+            max-width: 100%;
+        }
+        @for $i from 1 through $num-columns {
+            .col-#{$breakpoint}-#{$i} { @include col($i); }
+        }
+        @for $i from 1 through ($num-columns - 1) {
+            .col-#{$breakpoint}-offset-#{$i} { @include col-offset($i); }
+        }
+        .start-#{$breakpoint} {
+            @include start;
+        }
+        .center-#{$breakpoint} {
+            @include center;
+        }
+        .end-#{$breakpoint} {
+            @include end;
+        }
+        .top-#{$breakpoint} {
+            @include top;
+        }
+        .middle-#{$breakpoint} {
+            @include middle;
+        }
+        .bottom-#{$breakpoint} {
+            @include bottom;
+        }
+        .around-#{$breakpoint} {
+            @include around;
+        }
+        .between-#{$breakpoint} {
+            @include between;
+        }
+        .first-#{$breakpoint} {
+            @include first;
+        }
+        .last-#{$breakpoint} {
+            @include last;
+        }
+        .hidden-#{$breakpoint} {
+            @include hidden;
+        }
+        .visible-#{$breakpoint} {
+            @include visible;
+        }
+    }
 }
