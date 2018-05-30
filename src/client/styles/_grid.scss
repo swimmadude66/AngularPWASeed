@@ -118,6 +118,16 @@ $media-breakpoints: (
 
 @each $breakpoint, $media-var in $media-breakpoints {
     @media (min-width: $media-var) {
+        .container {
+            @if $media-var == 0 {
+                box-sizing: border-box;
+                width: 100%;
+                padding: 0 1rem;
+            }
+            @else {
+                width: $media-var + 10px;
+            }
+        }
         .col-#{$breakpoint} {
             flex-grow: 1;
             flex-basis: 0;
