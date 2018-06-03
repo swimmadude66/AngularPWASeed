@@ -1,0 +1,24 @@
+@import '~normalize-scss/sass/_normalize';
+
+@import '_variables';
+@import '_grid';
+@import '_helpers';
+@import '_buttons';
+@import '_forms';
+@import '_font';
+
+html, body {
+    height: 100%; // Default to full page
+    font-size: $root-font-size; // base font-size for rem
+    min-width: 320px; // set a hard stop of minimum width
+}
+body {
+    box-sizing: border-box;
+    font-size: 1.6rem;
+    font-family: 'Lato', sans-serif;
+}
+
+.error-text {
+    color: $error_color;
+    font-size: 1.4rem;
+}

@@ -26,25 +26,6 @@ gulp.task('start-server', ['compile-node'], function(){
 gulp.task('webpack', function(done) {
     var config = webpackConfig;
     process.env.BUILD_MODE = 'production';
-    config.plugins.push(
-        new webpack.optimize.UglifyJsPlugin({
-            compress: {
-                warnings: false,
-                screw_ie8: true,
-                conditionals: true,
-                unused: true,
-                comparisons: true,
-                sequences: true,
-                dead_code: true,
-                evaluate: true,
-                if_return: true,
-                join_vars: true,
-            },
-            output: {
-                comments: false
-            }
-        })
-    );
     return webpack(config, function(err, stats){
         if (err) {
             console.error(err);
@@ -66,7 +47,7 @@ gulp.task('webpack-watch', function() {
     config.watch = true;
     config.cache = true;
     config.bail = false;
-    config.devtool = 'source-map';
+    config.devtool = 'eval';
     config.stats = 'errors-only';
     config.module.rules.push(
         {

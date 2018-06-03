@@ -8,16 +8,21 @@ var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
+var UglifyJsPlugin  = require('uglifyjs-webpack-plugin');
 var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
 var commonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 var NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
 
+var entrypoints = ['common', 'polyfills', 'vendor', 'app', 'styles'];
+
 var config = {
     entry: {
         'app': path.join(__dirname,'./src/client/main.ts'),
+        'polyfills': path.join(__dirname, './src/client/polyfills.ts'),
         'vendor': path.join(__dirname,'./src/client/vendor.ts'),
-        'styles': path.join(__dirname, './src/client/styles.scss')
+        'styles': path.join(__dirname, './src/client/scss/styles.scss')
     },
+    devtool: 'source-map',
     output: {
         filename: '[name].min.js',
         path: path.join(__dirname, 'dist/client')
@@ -51,13 +56,16 @@ var config = {
                         }
                     },
                     {
-                        loader:'sass-loader'
+                        loader:'sass-loader',
+                        options: {
+                            includePaths: [path.join(__dirname, './src/client/scss')]
+                        }
                     }
                 ]
             },
             {
                 test: /\.scss$/,
-                include: [path.join(__dirname, './node_modules'), path.join(__dirname, './src/client/styles'), path.join(__dirname, './src/client/styles.scss')],
+                include: [path.join(__dirname, './node_modules'), path.join(__dirname, './src/client/scss')],
                 use: ExtractTextPlugin.extract({
                     fallback: 'style-loader',
                     use: [
@@ -72,76 +80,65 @@ var config = {
                                     return [
                                         autoprefixer({remove: false, flexbox: true}),
                                         cssnano
-                                    ]
+                                    ];
                                 }
                             }
                         },
                         {
-                            loader:'sass-loader'
+                            loader:'sass-loader',
+                            options: {
+                                includePaths: [path.join(__dirname, './src/client/scss')]
+                            }
                         }
                     ]
                 })
             },
+            // fonts
             {
-                test: /\.svg$/,
+                test: /\.((ttf)|(woff(2?))|(eot))/,
+                loader: 'url-loader',
+                exclude: [path.join(__dirname, './src/client/assets')],
+                options: {
+                    limit: 10240, // 10K limit
+                    name: 'assets/fonts/[name].[ext]'
+                }
+            },
+            {
+                test: /\.svg/,
+                include: /font(s)?/i,
+                exclude:  /\.svg\.js/,
                 use: [
                     {
-                        loader: 'file-loader'
-                    },
-                    {
-                        loader: 'svgo-loader',
+                        loader: 'url-loader',
                         options: {
-                            plugins: [
-                                {convertColors: {shorthex: false}},
-                                {cleanupAttrs: true},
-                                {removeDoctype: true},
-                                {removeXMLProcInst: true},
-                                {removeComments: true},
-                                {removeMetadata: true},
-                                {removeTitle: true},
-                                {removeDesc: true},
-                                {removeUselessDefs: true},
-                                {removeXMLNS: true},
-                                {removeEditorsNSData: true},
-                                {removeEmptyAttrs: true},
-                                {removeHiddenElems: true},
-                                {removeEmptyText: true},
-                                {removeEmptyContainers: true},
-                                {removeViewBox: true},
-                                {cleanupEnableBackground: true},
-                                {minifyStyles: true},
-                                {convertStyleToAttrs: true},
-                                {convertPathData: true},
-                                {convertTransform: true},
-                                {removeUnknownsAndDefaults: true},
-                                {removeNonInheritableGroupAttrs: true},
-                                {removeUselessStrokeAndFill: true},
-                                {removeUnusedNS: true},
-                                {cleanupIDs: true},
-                                {cleanupNumericValues: true},
-                                {cleanupListOfValues: true},
-                                {moveElemsAttrsToGroup: true},
-                                {moveGroupAttrsToElems: true},
-                                {collapseGroups: true},
-                                {removeRasterImages: true},
-                                {mergePaths: true},
-                                {convertShapeToPath: true},
-                                {sortAttrs: true},
-                            ]
+                            limit: 10*1024,
+                            name: 'assets/fonts/[name].svg'
                         }
                     }
                 ]
             },
-            // fonts
-            {
-                test: /\.((ttf)|(woff(2?))|(eot))/,
-                loader: 'file-loader'
-            },
             // images
             {
                 test: /\.((jpg)|(png)|(gif)|(bmp)|(ico))/,
-                loader: 'file-loader',
-                exclude: [path.join(__dirname, './src/client/assets')]
+                loader: 'url-loader',
+                exclude: [path.join(__dirname, './src/client/assets')],
+                options: {
+                    limit: 10240, // 10K limit
+                    name: 'assets/images/[name].[ext]'
+                }
+            },
+            {
+                test: /\.svg/,
+                exclude: [/font(s)?/i, /\.svg\.js/],
+                use: [
+                    {
+                        loader: 'url-loader',
+                        options: {
+                            limit: 10*1024,
+                            name: 'assets/images/[name].svg'
+                        }
+                    }
+                ]
             },
             // templateUrl
             { 
@@ -151,7 +148,6 @@ var config = {
         ]
     },
     plugins: [
-        new HtmlWebpackExcludeAssetsPlugin(),
         new HtmlWebpackPlugin({
             filename: path.join(__dirname, './dist/client/index.html'),
             template: path.join(__dirname, './src/client/index.html'),
@@ -159,29 +155,28 @@ var config = {
             hash: true,
             excludeAssets: [/styles\..*js/i],
             chunksSortMode: function(a,b) {
-                if (a.names[0] === 'common') {
-                    return -1;
-                }
-                if (a.names[0] === 'app') {
-                    return 1;
-                }
-                if (a.names[0] === 'vendor' && b.names[0] === 'app') {
-                    return -1;
-                } else {
-                    return 1;
-                }
+                return entrypoints.indexOf(a.names[0]) - entrypoints.indexOf(b.names[0])
             },
         }),
+        new HtmlWebpackExcludeAssetsPlugin(),
         new AotPlugin({
             tsConfigPath: path.join(__dirname, './src/client/tsconfig.json'),
             mainPath: path.join(__dirname, './src/client/main.ts'),
             typeChecking: false,
         }),
+        new UglifyJsPlugin({
+            parallel: true,
+            sourceMap: true,
+            cache: true,
+            uglifyOptions: {
+                output: {
+                    comments: false
+                }
+            }
+        }),
         new commonsChunkPlugin({
             name: 'common',
-            minChunks: 2,
-            async: false,
-            children: false
+            minChunks: 2
         }),
         new ExtractTextPlugin({
             allChunks: true, 
@@ -204,7 +199,7 @@ var config = {
             swDest: 'sw.js',
             clientsClaim: true,
             skipWaiting: true,
-            include: [/assets/, /.*\.((html)|(css)|(jpg)|(png)|(svg)|(woff(2?))|(eot)|(ttf))/, /((common)|(vendor)|(app))\.min\.js/],
+            include: [/assets/, /.*\.((html)|(css)|(jpg)|(png)|(svg)|(woff(2?))|(eot)|(ttf))/, /((polyfills)|(common)|(vendor)|(app))\.min\.js/],
             exclude: [/manifest/],
             runtimeCaching: [{
                 // Match any same-origin request that contains 'api'.
