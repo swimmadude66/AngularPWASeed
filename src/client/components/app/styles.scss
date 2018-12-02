@@ -1,0 +1,121 @@
+@import '_variables';
+
+$wrapper-size: 0rem;
+$one-screen-size: 0rem;
+ 
+.offline-banner {
+    background-color: $main-color;
+    height: $banner-height-xs;
+    @media(min-width: $screen-sm-min) {
+        height: $banner-height-sm;
+    }
+    @media(min-width: $screen-md-min) {
+        height: $banner-height;
+    }
+    .offline-text {
+        color: #000;
+        font-size: 1.6rem;
+        line-height: 2rem;
+        margin: 0;
+        padding: 0.5rem;
+        vertical-align: middle;
+        text-align: center;
+    }
+}
+
+.main {
+    display: flex;
+    flex-direction: row;
+    min-height: calc(100vh - #{$wrapper-size});
+    max-width: 100%;
+
+    .wrapper {
+        flex: 0 0 100%;
+        max-width: 100%;
+        min-height: calc(100vh - #{$wrapper-size});
+    }
+    
+    &.offline {
+        min-height: calc(100vh - #{$wrapper-size + $banner-height-xs});
+        @media(min-width: $screen-sm-min) {
+            min-height: calc(100vh - #{$wrapper-size + $banner-height-sm});
+        }
+        @media(min-width: $screen-md-min) {
+            min-height: calc(100vh - #{$wrapper-size + $banner-height});
+        }
+
+        .wrapper {
+            min-height: calc(100vh - #{$wrapper-size + $banner-height-xs});
+            @media(min-width: $screen-sm-min) {
+                min-height: calc(100vh - #{$wrapper-size + $banner-height-sm});
+            }
+            @media(min-width: $screen-md-min) {
+                min-height: calc(100vh - #{$wrapper-size + $banner-height});
+            }
+        }
+    }
+
+    @media (min-height: 65rem) {
+        min-height: calc(100vh - #{$one-screen-size});
+
+        .wrapper {
+            min-height: calc(100vh - #{$one-screen-size});
+        }
+
+        &.offline {
+            min-height: calc(100vh - #{$one-screen-size + $banner-height-xs});
+            @media(min-width: $screen-sm-min) {
+                min-height: calc(100vh - #{$one-screen-size + $banner-height-sm});
+            }
+            @media(min-width: $screen-md-min) {
+                min-height: calc(100vh - #{$one-screen-size + $banner-height});
+            }
+    
+            .wrapper {
+                min-height: calc(100vh - #{$one-screen-size + $banner-height-xs});
+                @media(min-width: $screen-sm-min) {
+                    min-height: calc(100vh - #{$one-screen-size + $banner-height-sm});
+                }
+                @media(min-width: $screen-md-min) {
+                    min-height: calc(100vh - #{$one-screen-size + $banner-height});
+                }
+            }
+        }
+    }
+}
+
+.toast-area {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: calc(100% - 1rem);
+    max-height: 11rem;
+    z-index: 200;
+    overflow: hidden;
+
+    @media(min-width: $screen-sm-min) {
+        top: inherit;
+        bottom: 2rem;
+        left: 2rem;
+        right: inherit;
+        width: 32rem;
+        max-height: 55rem;
+    }
+
+    .toast-stack {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+
+        @media(min-width: $screen-sm-min) {
+            flex-direction: column-reverse;
+        }
+
+        .toast-wrapper {
+            flex: 1 1 auto;
+            margin: 0.5rem 0;
+            position: relative;
+        }
+    }
+}

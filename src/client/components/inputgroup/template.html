@@ -1,19 +1,37 @@
-<div class="input-group">
-    <label [attr.for]="id" [ngClass]="{'has-error': !!errors && blurred}">
+<div class="form-group" [ngClass]="{'error': hasError && blurred, 'labeled': focused || !!control.value, 'filled': control.value && control.value.length, 'disabled': disabled}">
+    <label id="{{'label-'+id}}" for="input-{{id}}" class="control-label error" *ngIf="blurred && hasError">
+        {{getError()}}
+    </label>
+    <label id="{{'label-'+id}}" for="input-{{id}}" class="control-label" *ngIf="focused || (!!control.value && !hasError)">
         {{label}}
     </label>
-    <input
-        #input
-        class="form-control"
-        [name]="name"
-        [attr.id]="id" 
-        [attr.type]="type" 
-        [attr.placeholder]="placeholder"
-        [attr.autocomplete]="autocomplete"
-        [ngClass]="{'has-error': !!errors && blurred}"
-        [disabled]="disabled"
-        (blur)="onBlur()"
-        (input)="onChange($event)"
-    >
-    <p class="error-text" *ngIf="!!errors && blurred">{{getError()}}</p>
+    <div class="input-group">
+        <input 
+            #input
+            class="form-control" 
+            [name]="name"
+            [attr.id]="'input-'+id" 
+            [attr.type]="type" 
+            [attr.placeholder]="focused ? '' : placeholder"
+            [attr.autocomplete]="autocomplete"
+            [ngClass]="{'has-error': hasError && blurred, 'password': passwordButton && (control.value && control.value.length)}"
+            [disabled]="disabled"
+            [readonly]="disabled"
+            [maxLength]="maxLength"
+            (blur)="blur($event)"
+            (focus)="focus($event)"
+            (input)="onChange($event)"
+        >        
+        <div class="password-button" id="pwd-button--{{id}}" *ngIf="passwordButton && (control.value && control.value.length)" (click)="togglePwdVis()">
+            <ng-container *ngIf="!pwdShown">
+                Show
+            </ng-container>
+            <ng-container *ngIf="pwdShown">
+                Hide
+            </ng-container>
+        </div>
+    </div>
 </div>
+<p class="requirements-text" *ngIf="showRequirements && blurred && hasPasswordError">
+    Passwords must be at least 8 characters long, have no whitespace, and contain at least one lowercase letter, uppercase letter, number, and symbol
+</p>

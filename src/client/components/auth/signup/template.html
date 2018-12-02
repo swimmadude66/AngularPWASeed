@@ -9,30 +9,32 @@
                         type="email"
                         name="email"
                         [formControl]="formControls['email']"
-                        [errors]="formControls['email']?.errors"
                         label="Email"
                         placeholder="Email"
                         autocomplete="email"
                     ></input-group>
                     <input-group
-                        id="txtPassword"
+                        id="txtpassword"
                         type="password"
                         name="password"
                         [formControl]="formControls['password']"
-                        [errors]="formControls['password']?.errors"
-                        label="New Password"
-                        placeholder="New Password"
+                        [passwordButton]="true"
+                        [showRequirements]="true"
+                        label="Password"
+                        placeholder="Create a Password"
                         autocomplete="new-password"
+                        title="Passwords must be at least 8 characters long, have no whitespace, and contain at least one lowercase letter, uppercase letter, number, and symbol"
                     ></input-group>
                     <input-group
                         id="txtConfirmPassword"
                         type="password"
                         name="password"
                         [formControl]="formControls['confirmPassword']"
-                        [errors]="formControls['confirmPassword']?.errors"
+                        [passwordButton]="true"
                         label="Confirm Password"
                         placeholder="Confirm Password"
                         autocomplete="new-password"
+                        title="Passwords must be at least 8 characters long, have no whitespace, and contain at least one lowercase letter, uppercase letter, number, and symbol"
                     ></input-group>
                     <button class="btn btn-success d-inlineblock" type="submit">Sign up</button>
                     <a [routerLink]="['/login']" class="d-inlineblock pull-right">Log in instead</a>

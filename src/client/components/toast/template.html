@@ -1,0 +1,15 @@
+<div class="toast-container" 
+    (click)="dismissToast()"
+    [ngClass]="{
+        'dismissable': toast?.dismissable,
+        'error-toast': toast?.type === ToastType.Error,
+        'warning-toast': toast?.type === ToastType.Warning,
+        'info-toast': toast?.type === ToastType.Info,
+        'success-toast': toast?.type === ToastType.Success
+    }"
+>
+    <div class="toast-content">
+        <p class="toast-title">{{toast?.title}}</p>
+        <p class="toast-message" *ngIf="toast.message && toast.message.length">{{toast?.message}}</p>
+    </div>
+</div>

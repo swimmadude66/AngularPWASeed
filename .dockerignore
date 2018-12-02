@@ -1,0 +1,15 @@
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+.gitkeep
+.scannerwork/
+.nyc_output/
+dist/
+monitor/
+docker-compose.yml
+docker-compose.*.yml
+node_modules/
+reports/

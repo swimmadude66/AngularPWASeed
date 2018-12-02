@@ -1,9 +1,10 @@
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {BrowserModule} from '@angular/platform-browser';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {SharedModule} from '@modules/shared';
-import {AppComponent, LoginComponent} from '@components/';
-import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/'
+import {AppComponent, LoginComponent} from '@components/index';
+import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
 
 @NgModule({
     bootstrap: [
@@ -11,6 +12,7 @@ import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/'
     ],
     imports: [
         BrowserModule,
+        BrowserAnimationsModule,
         SharedModule,
         RouterModule.forRoot(
             [

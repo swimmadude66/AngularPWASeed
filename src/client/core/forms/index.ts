@@ -1,2 +1,2 @@
 export * from './formerrors/formerrors';
-export * from './validators/passwords';
+export * from './validators';

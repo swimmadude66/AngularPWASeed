@@ -1,0 +1,57 @@
+@keyframes slideInFromTop {
+    0%{
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOutToTop {
+    0% {
+        transform: translateY(0);
+    }
+    100%{
+        transform: translateY(-100%);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        visibility: visible;
+        right: -100%;
+    }
+    to {
+        visibility: visible;
+        right: 0
+    }
+}
+
+@keyframes throb {
+    0% {
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dashoffset: 750;
+    }
+    100% {
+        stroke-dashoffset: 1500;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes delayVisibility {
+    from {
+        opacity: 0;
+    } to {
+        opacity: 1;
+    }
+}

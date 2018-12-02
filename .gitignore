@@ -1,5 +1,14 @@
 node_modules/
 dist/
-.env
-testing_keys
+reports/
+monitor/
+build/
+.scannerwork/
+.nyc_output/
 .vscode/
+.env
+.results
+results
+stats.json
+src/client/build
+BrowserStackLocal

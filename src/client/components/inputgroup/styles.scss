@@ -1,14 +1,144 @@
 @import '_variables';
 
+.form-group {
+    border-radius: $base-border-radius;
+    background-color: $almost-white !important;
+    color: $almost-black;
+    text-align: left;
+    margin: 0 0 1rem 0;
+    box-sizing: border-box;
+    height: 5rem;
+    padding: 0.2rem 0.5rem;
+    border: solid 0.2rem $almost-white;
+    transition: border-color ease-in-out .15s, background-color ease-in-out .15s, color ease-in-out .15s;
 
-input.has-error {
-    margin-bottom: 0.3rem;
+    &.error {
+        color: $error-color;
+        background-color: $almost-white !important;
+        border: solid 0.2rem $error-color;  
+    }
+
+    &.labeled,&.error {
+        .input-group {
+            height: calc(100% - 1.5rem);
+            .password-button {
+                top: -20%;
+            }
+        }
+    }
+
+    &.filled {
+        background-color: #ffffff !important;
+    }
+    
+    &:focus-within {
+        background-color: $focus-background !important;
+        border: solid 0.2rem $main-color;
+    }
+
+    &.disabled {
+        background-color: $almost-white !important;
+        color: $text-light-grey;
+        border: none;
+
+        &:focus-within {
+            background-color: $almost-white !important;
+            color: $text-light-grey;
+            border: none;
+        }
+    }
+
+    .control-label {
+        text-align: left;
+        color: $text-grey;
+        font-size: 1.3rem;
+        letter-spacing: 0.01rem;
+        height: 2rem;
+        margin: 0;
+        padding: 0 1.3rem;
+    
+        &.error {
+            color: $error-color;
+        }
+    }
+
+    .input-group {
+        width: 100%;
+        height: 100%;
+        display: flex;
+
+        .form-control {
+            border: none;
+            outline: none;
+            font-size: 1.7rem;
+            line-height: 2.6rem;
+            font-weight: 600;
+            letter-spacing: 0.01rem;
+            width: 100%;
+            height: 100%;
+            padding: 0 1.3rem 0.6rem 1.3rem;
+            background-color: transparent !important; // IE needs this
+
+            &::-webkit-input-placeholder {
+                font-size: 1.6rem;
+                line-height: 2.4rem;
+                color: #999999;
+                font-weight: 400;
+            }
+            &::-moz-placeholder {
+                font-size: 1.6rem;
+                line-height: 2.4rem;
+                color: #999999;
+                font-weight: 400;
+            }
+            &:-ms-input-placeholder {
+                font-size: 1.6rem;
+                line-height: 2.4rem;
+                color: #999999;
+                font-weight: 400;
+            }
+            &:-moz-placeholder {
+                font-size: 1.6rem;
+                line-height: 2.4rem;
+                color: #999999;
+                font-weight: 400;
+            }
+            &::placeholder {
+                font-size: 1.6rem;
+                line-height: 2.4rem;
+                color: #999999;
+                font-weight: 400;
+            }
+
+            &.has-error {
+                background-image: url('/assets/images/alert-icon.svg');
+                background-size: 1.8rem 1.8rem;
+                background-repeat: no-repeat;
+                background-position: 100% 0%;
+            }
+
+            &.password {
+                width: calc(100% - 5.5rem);
+            }
+        }
+
+        .password-button {
+            position: relative;
+            top: 10%;
+            right: 0;
+            color: $main-color;
+            line-height: 2rem;
+            font-size: 1.6rem;
+            font-weight: 600;
+            height: 2rem;
+            max-width: 5.5rem;
+            cursor: pointer;
+        }
+    }
 }
 
-.error-text {
-    color: $error_color;
-    font-size: 1.2rem;
-    line-height: 1.2rem;
-    text-align: right;
-    margin: 0 0 0.5rem 0;
+.requirements-text {
+    font-size: 1.4rem;
+    color: $error-color;
+    line-height: 1.6rem;
 }

@@ -1,1 +1,15 @@
-<router-outlet></router-outlet>
+<div class="offline-banner" *ngIf="!online" [@slideInTop]>
+    <p class="offline-text">It looks like you are offline, so some features may not function correctly. <br class="hidden-lg"/> Please check your internet connection.</p>
+</div>
+<div class="main" [ngClass]="{'offline': !online}">
+    <div class="wrapper">
+        <router-outlet></router-outlet>
+    </div>
+</div>
+<div class="toast-area" *ngIf="toasts && toasts.length">
+    <div class="toast-stack">
+        <div class="toast-wrapper" *ngFor="let t of toasts" [@toast]>
+            <toast [toast]="t" (dismiss)="reapToast(t.id, $event)"></toast>
+        </div>
+    </div>
+</div>

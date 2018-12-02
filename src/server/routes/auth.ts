@@ -2,7 +2,7 @@ import {Router} from 'express';
 import {createHash} from 'crypto';
 import * as uuid from 'uuid/v4';
 import {Observable} from 'rxjs';
-import {flatMap} from 'rxjs/operators';
+import {flatMap, switchMap} from 'rxjs/operators';
 import {Config} from '../models/config';
 
 const COOKIE_OPTIONS = {
@@ -48,7 +48,7 @@ module.exports = (APP_CONFIG: Config) => {
         } else {
             db.query('Select `PassHash`, `UserId`, `Salt` from `users` where `Active`=1 AND `Email`=? LIMIT 1;', [body.Email])
             .pipe(
-                flatMap(
+                switchMap(
                     (users: any[]) => {
                         let user = {UserId: -100, PassHash: '12345', Salt: '12345'}; // use a fake user which will fail to avoid timing differences indicating existence of real users.
                         if (users.length > 0) {
