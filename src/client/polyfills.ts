@@ -22,6 +22,6 @@ import 'core-js/es6/weak-map';
 import 'core-js/es6/set';
 
 // Fix IE matches error
-if (!Element.prototype['matches']) {
+if (!Element.prototype['matches'] && Element.prototype['msMatchesSelector']) {
     Element.prototype['matches'] = Element.prototype['msMatchesSelector'];
 }
