@@ -1,30 +1,58 @@
 var gulp        	= require('gulp');
 var webpack         = require('webpack');
 var webpackConfig   = require('./webpack.config');
+var webpackssrConfig= require('./webpack.config.ssr');
 var browserSync     = require('browser-sync-webpack-plugin');
 var ts_project	    = require('gulp-typescript').createProject('./src/server/tsconfig.json');
 var spawn           = require('child_process').spawn;
 var server_proc;
 
-gulp.task('compile-node', function() {
-	return gulp.src('./src/server/**/*.ts')
+function compileNode() {
+    return gulp.src('./src/server/**/*.ts')
 	.pipe(ts_project()).js
 	.pipe(gulp.dest('dist/server/'));
-});
+}
 
-gulp.task('start-server', ['compile-node'], function() {
+function startServer(universal) {
     if (server_proc) {
         server_proc.kill();
         server_proc = undefined;
     }
+    var opts = {};
+    if (universal) {
+        opts.UNIVERSAL = 1;
+    }
     server_proc = spawn('node', ['--inspect=5959', 'dist/server/app.js'], {
         cwd: __dirname,
+        env: opts,
         stdio: [0, 1, 2, 'ipc']
     });
+}
+
+
+gulp.task('compile-node', compileNode);
+
+gulp.task('start-server', ['compile-node'], function() {
+    startServer(false);
 });
 
 gulp.task('webpack', function(done) {
     var config = webpackConfig;
+    process.env.BUILD_MODE = 'production';
+    return webpack(config, function(err, stats){
+        if (err) {
+            console.error(err);
+        }
+        if (stats.hasErrors() && stats.compilation.errors) {
+            stats.compilation.errors.forEach(function(e){console.error(e,'\n');});
+        }
+        console.log(stats.toString());
+        return done(err);
+    });
+});
+
+gulp.task('webpackssr', function(done) {
+    var config = webpackssrConfig;
     process.env.BUILD_MODE = 'production';
     return webpack(config, function(err, stats){
         if (err) {
@@ -70,6 +98,19 @@ gulp.task('webpack-watch', function() {
         }
         console.log(stats.toString());
     });
+});
+
+gulp.task('compile-node-ssr', ['webpack', 'webpackssr'], compileNode);
+
+gulp.task('build-ssr', ['compile-node-ssr']);
+
+gulp.task('start-server-ssr', ['compile-node-ssr'], function() {
+    startServer(true);
+});
+
+gulp.task('watchssr', ['start-server-ssr'], function() {
+    console.log('watching for changes...');
+    gulp.watch(['src/server/**/*.ts', '.env'], ['start-server']);
 });
 
 gulp.task('watch', ['start-server', 'webpack-watch'], function() {

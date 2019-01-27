@@ -1,32 +1,21 @@
 var path = require('path');
-var webpack = require('webpack');
-var workbox = require('workbox-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var HtmlWebpackExcludeAssetsPlugin = require('html-webpack-exclude-assets-plugin');
-var HtmlWebpackLinkTypePlugin = require('html-webpack-link-type-plugin').HtmlWebpackLinkTypePlugin;
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var CircularDependencyPlugin = require('circular-dependency-plugin');
-var UglifyJsPlugin  = require('uglifyjs-webpack-plugin');
 var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
-var NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
-
-var bundles = ['common', 'polyfills', 'vendor', 'app', 'styles'];
+var nodeExternals = require('webpack-node-externals');
 
 var config = {
     mode: 'none',
+    target: 'node',
     entry: {
-        app: path.join(__dirname,'./src/client/main.ts'),
-        vendor: path.join(__dirname,'./src/client/vendor.ts'),
-        polyfills: path.join(__dirname,'./src/client/polyfills.ts'),
-        styles: path.join(__dirname, './src/client/scss/styles.scss')
+        ssr: path.join(__dirname,'./src/client/main.server.ts'),
     },
     output: {
-        filename: '[name].[contenthash].min.js',
-        path: path.join(__dirname, 'dist/client'),
-        pathinfo: true
+        filename: '[name].js',
+        path: path.join(__dirname, 'dist/ssr'),
+        libraryTarget : 'commonjs',
+        chunkFilename : '[id].ssr.js'
     },
     resolve: {
         extensions: ['.ts', '.js', '.json', '.scss', '.css']
@@ -155,92 +144,27 @@ var config = {
         ]
     },
     optimization: {
-        splitChunks: {
-            cacheGroups: {
-                commons: {
-                  name: 'common',
-                  chunks: 'initial',
-                  minChunks: 2
-                }
-            }
-        },
-        minimize: true,
-        minimizer: [
-            new UglifyJsPlugin({
-                parallel: true,
-                sourceMap: process.env.BUILD_MODE === 'development',
-                cache: true,
-                uglifyOptions: {
-                    compress: true,
-                    output: {
-                        comments: false
-                    }
-                }
-            })
-        ],
-        concatenateModules: true
+        minimize: false,
+        concatenateModules: false
     },
     plugins: [
-        new HtmlWebpackPlugin({
-            filename: path.join(__dirname, './dist/client/index.html'),
-            template: path.join(__dirname, './src/client/index.html'),
-            inject: 'body',
-            hash: false,
-            showErrors: false,
-            excludeAssets: [/styles\..*js/i],
-            chunksSortMode: function(a,b) {
-                return bundles.indexOf(a.names[0]) - bundles.indexOf(b.names[0]);
-            },
-        }),
-        new HtmlWebpackExcludeAssetsPlugin(),
-        new HtmlWebpackLinkTypePlugin(),
         new AotPlugin({
-            tsConfigPath: path.join(__dirname, './src/client/tsconfig.app.json'),
-            mainPath: path.join(__dirname, './src/client/main.ts'),
-            typeChecking: false,
+            entryModule :  path.join(__dirname,  './src/client/modules/server#AppServerModule'),
+            tsConfigPath: path.join(__dirname, './src/client/tsconfig.server.json'),
+            mainPath: path.join(__dirname, './src/client/main.server.ts'),
+            platform: 1,
+            skipCodeGeneration: false,
         }),
         new MiniCssExtractPlugin ({
             filename: '[name].[contenthash].min.css'
         }),
-        new CircularDependencyPlugin({
-            exclude: /node_modules/,
-            failOnError: true
-        }),
-        new CopyWebpackPlugin([
-            {
-                from: path.join(__dirname, './src/client/assets'),
-                to: path.join(__dirname, './dist/client/assets')
-            },
-            {
-                from: path.join(__dirname, './src/client/robots.txt'),
-                to: path.join(__dirname, './dist/client/robots.txt')
-            },
-            {
-                from: path.join(__dirname, './src/client/manifest.json'),
-                to: path.join(__dirname, './dist/client/manifest.json')
-            },
-            {
-                from: path.join(__dirname, './src/client/.well-known'),
-                to: path.join(__dirname, './dist/client/.well-known')
-            }
-        ]),
-        new NormalModuleReplacementPlugin(/environments\/environment/, function(resource) {
-            resource.request = resource.request.replace(/environment$/, (process.env.BUILD_MODE === 'development' ? 'devEnvironment':'prodEnvironment'));
-        }),
-        new workbox.InjectManifest({
-            swSrc: path.join(__dirname, './src/client/sw.js'),
-            swDest: 'sw.js',
-            importsDirectory: 'wb-assets',
-            exclude: [
-                /index\.html$/i, // do not cache index, so lazy loaded modules are fetched correctly
-                /styles\..*\.min\.js/i, // empty bundle file from extractText
-                /[0-9]+\..*?\.min\.js$/i, // lazy-loaded bundles
-                /\.map/i, // source-maps
-                /node_modules/, // node_modules
-                /manifest/i // PWA manifest
-            ]
-        })
-    ]
+    ],
+    externals : [
+        nodeExternals()
+    ],
+    node: {
+        __dirname: true
+    }
 };
 
 module.exports = config;

@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "exclude": [
+        "../../node_modules",
+        "tests/",
+        "**/*.spec.ts",
+        "e2e/"
+    ],
+    "angularCompilerOptions": {
+        "entryModule": "modules/server#AppServerModule"
+    }
+}

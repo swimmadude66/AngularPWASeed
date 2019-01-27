@@ -18,7 +18,7 @@ chromium \
 && npm test \
 && apk del \
 chromium \
-&& npm run build \
+&& npm run buildssr \
 && mkdir -p -m 0777 /app/dist \
 && cp -R dist/* /app/dist \
 && cp package.json /app \

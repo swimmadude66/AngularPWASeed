@@ -1,7 +1,8 @@
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
-import {BrowserModule} from '@angular/platform-browser';
+import {BrowserModule, BrowserTransferStateModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {TransferHttpCacheModule} from '@nguniversal/common';
 import {SharedModule} from '@modules/shared';
 import {AppComponent, LoginComponent} from '@components/index';
 import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
@@ -11,9 +12,11 @@ import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
         AppComponent
     ],
     imports: [
-        BrowserModule,
+        BrowserModule.withServerTransition({appId: 'demowebapp'}),
         BrowserAnimationsModule,
         SharedModule,
+        TransferHttpCacheModule,
+        BrowserTransferStateModule,
         RouterModule.forRoot(
             [
                 {path: 'login', canActivate: [NotLoggedInGuard], component: LoginComponent},
