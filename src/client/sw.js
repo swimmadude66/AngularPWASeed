@@ -1,5 +1,5 @@
-workbox.skipWaiting();
-workbox.clientsClaim();
+workbox.core.skipWaiting();
+workbox.core.clientsClaim();
 
 var apiSync = new workbox.backgroundSync.Plugin('api_queue', {
     maxRetentionTime: 24 * 60 // Retry for max of 24 Hours
@@ -109,5 +109,4 @@ workbox.routing.registerNavigationRoute('/index.html'); // always serve index, j
 self.addEventListener('fetch', function() {}); // empty fetch so google will prompt for install
 
 self.__precacheManifest = [].concat(self.__precacheManifest || []);
-workbox.precaching.suppressWarnings();
 workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
