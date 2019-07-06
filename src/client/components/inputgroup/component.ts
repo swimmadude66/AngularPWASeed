@@ -42,7 +42,7 @@ export class InputGroupComponent implements ControlValueAccessor {
     @Output('onFocus') onFocus: EventEmitter<any> = new EventEmitter<any>();
     @Output('onBlur') onBlur: EventEmitter<any> = new EventEmitter<any>();
 
-    @ViewChild('input') set input(i: ElementRef) {
+    @ViewChild('input', {static: true}) set input(i: ElementRef) {
         this.inputElement = i.nativeElement as HTMLInputElement;
     }
 

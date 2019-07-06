@@ -12,12 +12,6 @@ import * as morgan from 'morgan';
 import * as dotenv from 'dotenv';
 import * as userAgent from 'express-useragent';
 
-import 'zone.js/dist/zone-node';
-import 'reflect-metadata';
-import * as domino from 'domino';
-import {ngExpressEngine} from '@nguniversal/express-engine';
-import {provideModuleMap} from '@nguniversal/module-map-ngfactory-loader';
-
 import {Config} from './models/config';
 import {DatabaseService} from './services/db';
 import {SessionManager} from './services/session';
@@ -92,6 +86,9 @@ if (cluster.isMaster) {
         )
     );
 
+    // redirect http to https
+    app.use(require('./middleware/httpredir')(APP_CONFIG));
+
     app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', '*');
         return next();
@@ -139,94 +136,21 @@ if (cluster.isMaster) {
     // Render static files
     app.get('*.*', express.static(APP_CONFIG.client_root, {maxAge: 0}));
 
-    if (APP_CONFIG.universal) {
-        // Render Angular Universal
-        // Our index.html we'll use as our template
-        const templateFile = HelpersService.tryLoad(join(APP_CONFIG.client_root, './index.html'));
-        if (!templateFile) {
-            loggingService.logError('Could not load template, falling back to client side render');
-            app.use('*', (req, res, next) => {
-                return next();
-            });
-        } else {
-            const template = templateFile.toString();
-            const win = domino.createWindow(template);
-            const fakeanimation = {
-                value: () => {
-                    return {
-                        enumerable: true,
-                        configurable: true
-                    };
-                },
-            };
-            global['window'] = win;
-            global['document'] = {...win.document, 
-                createElement: () => {},
-                body: {
-                    ...win.document.body,
-                    style: { 
-                        ...win.document.body.style,
-                        transform: fakeanimation,
-                        opacity: fakeanimation,    
-                        bottom: fakeanimation,    
-                        left: fakeanimation,    
-                    }
-                }
-            };
-            global['navigator'] = win.navigator;
-            global['location'] = win.location;
-
-            const { AppServerModuleNgFactory, LAZY_MODULE_MAP } = require('../ssr/ssr.js');
-
-            app.engine('html', ngExpressEngine({
-                bootstrap: AppServerModuleNgFactory,
-                providers: [
-                    provideModuleMap(LAZY_MODULE_MAP),
-                ]
-            }));
-
-            app.set('view engine', 'html');
-            app.set('views', APP_CONFIG.client_root);
-        
-
-            app.get('*', (req, res, next) => {
-                const protocol = res.locals.protocol || req.protocol;
-                const showPort = /localhost/i.test(req.hostname);
-                const serverUrl = `${protocol}://${req.hostname}${showPort ? ':'+APP_CONFIG.port : ''}`;
-                const extraProviders = [
-                    {
-                        provide: 'serverURL',
-                        useValue: serverUrl
-                    }
-                ];
-                if (res.locals.auth && res.locals.auth.length) {
-                    const authSig = createHmac('sha512', APP_CONFIG.cookie_secret).update(res.locals.auth).digest('base64');
-                    const signedAuth = `${res.locals.auth}|${authSig}`;
-                    extraProviders.push({
-                        provide: 'serverAuth',
-                        useValue: signedAuth
-                    });
-                }
-                res.render('index', {
-                    req,
-                    document: template,
-                    url: req.url,
-                    providers: extraProviders
-                });
-            });
-        }
-    }
-
     // Standard Client-side Angular as a fallback
-    app.get('*', (req, res) => {
+    app.get('*', (req, res, next) => {
+        if (!/\.html/i.test(req.path) && /\./i.test(req.path)) {
+            return next();
+        }
         return res.sendFile(join(APP_CONFIG.client_root, './index.html'));
     });
 
-    app.all('*', function(req, res){
-    return res.status(404).send('404 UNKNOWN ROUTE');
+    app.all('*', (req, res) => {
+        return res.status(404).send({Message: '404 UNKNOWN ROUTE'});
     });
 
     server.listen(APP_CONFIG.port);
 
-    console.log('App started on port', APP_CONFIG.port);
+    if (cluster.isMaster) {
+        console.log('APP LISTENING ON PORT', APP_CONFIG.port);
+    }
 }

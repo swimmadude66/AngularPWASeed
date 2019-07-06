@@ -10,7 +10,7 @@ $media-breakpoints: (
 
 // Grid Calculations
 @function col-width($numWidth) {
-    @return ($numWidth / $num-columns)* 100%;
+    @return ($numWidth / $num-columns) * 100%;
 }
 
 @mixin col($numWidth) {

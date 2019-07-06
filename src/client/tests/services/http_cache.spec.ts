@@ -3,11 +3,13 @@ import {mock, when, anyString, instance, verify, resetCalls} from 'ts-mockito';
 import {of as ObservableOf} from 'rxjs';
 import {tap, flatMap} from 'rxjs/operators';
 import {BrowserStorageService, HttpCacheService} from '../../services/caching'
+import {ServerSideService} from '../../services/ssr';
 
 describe('HttpCacheService', () => {
     let browserCache = {};
     let mockedStore: BrowserStorageService;
     let store: BrowserStorageService;
+    let ssr: ServerSideService;
     let httpCache: HttpCacheService;
     before(() => {
         mockedStore = mock(BrowserStorageService);
@@ -15,12 +17,17 @@ describe('HttpCacheService', () => {
         when(mockedStore.getSession(anyString())).thenCall(sessKey => browserCache[sessKey]);
         when(mockedStore.removeSession(anyString())).thenCall(sessKey => delete browserCache[sessKey]);
         store = instance(mockedStore);
+
+        const mockedSSR = mock(ServerSideService);
+        when(mockedSSR.isBrowser()).thenReturn(true);
+        when(mockedSSR.isServer()).thenReturn(false);
+        ssr = instance(mockedSSR);
     });
 
     beforeEach(() => {
         browserCache = {};
         resetCalls(mockedStore);
-    })
+    });
 
     describe('constructor', () => {
         it('should try to load cached data from store', () => {
@@ -28,7 +35,7 @@ describe('HttpCacheService', () => {
                 shcindex: '["test"]',
                 test: []
             }
-            httpCache = new HttpCacheService(store);
+            httpCache = new HttpCacheService(store, ssr);
             verify(mockedStore.getSession('shcindex')).called();
             verify(mockedStore.getSession('shc_test')).called();
             expect(httpCache).to.exist;
@@ -40,7 +47,7 @@ describe('HttpCacheService', () => {
                 test: '[]',
                 corrupt: '}>*<{'
             }
-            httpCache = new HttpCacheService(store);
+            httpCache = new HttpCacheService(store, ssr);
             verify(mockedStore.getSession('shcindex')).called();
             verify(mockedStore.getSession('shc_test')).called();
             verify(mockedStore.getSession('shc_corrupt')).called();
@@ -51,7 +58,7 @@ describe('HttpCacheService', () => {
             browserCache = {
                 shcindex: '}>*<{',
             }
-            httpCache = new HttpCacheService(store);
+            httpCache = new HttpCacheService(store, ssr);
             verify(mockedStore.getSession('shcindex')).called();
             expect(httpCache).to.exist;
         });
@@ -60,7 +67,7 @@ describe('HttpCacheService', () => {
     describe('cacheRequest', () => {
         beforeEach(() => {
             browserCache = {};
-            httpCache = new HttpCacheService(store);
+            httpCache = new HttpCacheService(store, ssr);
         });
 
         it('should cache the result for 30s', (done) => {
@@ -170,7 +177,7 @@ describe('HttpCacheService', () => {
     describe('cache result', () => {
         beforeEach(() => {
             browserCache = {};
-            httpCache = new HttpCacheService(store);
+            httpCache = new HttpCacheService(store, ssr);
         });
 
         it('should store a value in cache', () => {
