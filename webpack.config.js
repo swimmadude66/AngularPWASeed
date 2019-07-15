@@ -232,7 +232,6 @@ var config = {
             swDest: 'sw.js',
             importsDirectory: 'wb-assets',
             exclude: [
-                /index\.html$/i, // do not cache index, so lazy loaded modules are fetched correctly
                 /styles\..*\.min\.js/i, // empty bundle file from extractText
                 /[0-9]+\..*?\.min\.js$/i, // lazy-loaded bundles
                 /\.map/i, // source-maps

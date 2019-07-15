@@ -1,10 +1,16 @@
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+workbox.skipWaiting();
+workbox.clientsClaim();
 
 var apiSync = new workbox.backgroundSync.Plugin('api_queue', {
     maxRetentionTime: 24 * 60 // Retry for max of 24 Hours
 });
 
+
+self.__precacheManifest = [].concat(self.__precacheManifest || []);
+workbox.precaching.suppressWarnings();
+workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
+
+workbox.routing.registerNavigationRoute('/index.html'); // always serve index, just like when the internet is live
 
 workbox.routing.registerRoute(
     /\/api\//i,
@@ -103,10 +109,3 @@ workbox.routing.registerRoute(
     }), 
     'GET'
 );
-
-workbox.routing.registerNavigationRoute('/index.html'); // always serve index, just like when the internet is live
-
-self.addEventListener('fetch', function() {}); // empty fetch so google will prompt for install
-
-self.__precacheManifest = [].concat(self.__precacheManifest || []);
-workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
