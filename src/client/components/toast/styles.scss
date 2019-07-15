@@ -19,24 +19,24 @@
     }
 
     &.error-toast {
-        background-color: #ef2054; // <-- base error color was too pink
-        background-image: url('/assets/images/alert-icon-flat.svg');
+        background-color: $error-color;
+        background-image: url('/assets/images/x-o.svg');
     }
 
     &.warning-toast {
         background-color: $warning-color;
-        background-image: url('/assets/images/alert-icon-flat.svg');
+        background-image: url('/assets/images/bang-o.svg');
     }
 
     &.info-toast {
         background-color: $info-color;
-        background-image: url('/assets/images/Steady-Logo-Icon-Flat.svg');
+        background-image: url('/assets/images/logo-flat.svg');
         color: #fff;
     }
 
     &.success-toast {
         background-color: $success-color;
-        background-image: url('/assets/images/check-flat.svg');
+        background-image: url('/assets/images/check-o.svg');
     }
 
     .toast-content {
