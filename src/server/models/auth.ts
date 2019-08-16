@@ -1,15 +1,20 @@
+import { UserRole } from './user';
+
 export interface UserSession {
     UserId: number;
     Email: string;
+    Role: UserRole;
     SessionKey: string;
-    Expires: number;
+    SessionId: number;
+    Expires: Date;
 }
 
 export interface SessionInfo {
     SessionKey: string;
-    UserId: number;
-    Expires: number;
+    SessionId: number;
+    UserId: string;
+    Expires: Date;
     UserAgent?: string;
     Created?: Date;
-    LastAccessed?: Date;
+    LastUsed?: Date;
 }

@@ -1,16 +1,18 @@
-import {Observable} from 'rxjs';
-import {createPool, IPoolConfig, Pool, escape as mysqlEscape} from 'mysql';
+import {createPool, PoolConfig, Pool, Connection, escape as mysqlEscape} from 'mysql';
+import {Observable, throwError, of} from 'rxjs';
+import {switchMap, catchError, tap} from 'rxjs/operators';
+import {DBResponse} from '../models/db';
 
 const NUMPERPAGE = 50;
 
 export class DatabaseService {
     private _pool: Pool;
 
-    constructor(config?: IPoolConfig) {
+    constructor(config?: PoolConfig) {
         let poolconfig = Object.assign({
             host: process.env.DB_HOST || 'localhost',
             port: process.env.DB_PORT || 3306,
-            database: process.env.DB_DATABASE || 'demoDb',
+            database: process.env.DB_DATABASE || 'aker',
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASSWORD || 'admin',
             charset: 'utf8mb4' // allow emojis
@@ -19,7 +21,23 @@ export class DatabaseService {
         this._pool = createPool(poolconfig);
     }
 
-    query(q, params?): Observable<any> {
+    query<T>(q: string, params?: any[]): Observable<DBResponse<T>> {
+        return this.getConnection()
+        .pipe(
+            switchMap(
+                conn => this.connectionQuery<T>(conn, q, params)
+                .pipe(
+                    tap(_ => conn.release()),
+                    catchError(err => {
+                        conn.release();
+                        return throwError(err);
+                    })
+                )
+            )
+        );
+    }
+
+    getConnection(): Observable<Connection> {
         return Observable.create(observer => {
             this._pool.getConnection((err, conn) => {
                 if (err) {
@@ -27,15 +45,51 @@ export class DatabaseService {
                         conn.release();
                     }
                     return observer.error(err);
+                } else {
+                    observer.next(conn);
+                    return observer.complete(conn);
                 }
-                conn.query(q, params || [], (error, result) => {
-                    conn.release();
-                    if (error) {
-                        return observer.error(error);
-                    }
-                    observer.next(result);
-                    observer.complete(result); // rebroadcast on complete for async await
-                });
+            });
+        });
+    }
+
+    connectionQuery<T>(conn: Connection, query: string, params?: any[]): Observable<DBResponse<T>> {
+        return Observable.create(observer => {
+            conn.query(query, params || [], (error, result) => {
+                if (error) {
+                    return observer.error(error);
+                }
+                observer.next(result);
+                observer.complete(result); // rebroadcast on complete for async await
+            });
+        });
+    }
+
+    beginTransaction(conn?: Connection): Observable<Connection> {
+        const connSource = conn ? of(conn) : this.getConnection();
+        return connSource.pipe(
+            switchMap(connection => this._beginTransaction(connection))
+        );
+    }
+    
+
+    connectionCommit(conn: Connection): Observable<Connection> {
+        return Observable.create(obs => {
+            conn.commit((err) => {
+                if (err) {
+                    return obs.error(err);
+                }
+                obs.next(conn);
+                return obs.complete(conn);
+            });
+        });
+    }
+
+    connectionRollback(conn: Connection): Observable<Connection> {
+        return Observable.create(obs => {
+            conn.rollback(() => {
+                obs.next(conn);
+                return obs.complete(conn);
             });
         });
     }
@@ -44,8 +98,15 @@ export class DatabaseService {
         return mysqlEscape(value);
     }
 
-    generatePageQuery(pageNum: number) {
-        // We want to get the 1 more than page length, and hide it locally to decide if there is a next page
-        return ` LIMIT ${Math.max(pageNum - 1, 0) * NUMPERPAGE}, ${NUMPERPAGE + 1}`;
+    private _beginTransaction(conn: Connection): Observable<Connection> {
+        return Observable.create(obs => {
+            conn.beginTransaction((err) => {
+                if (err) {
+                    return obs.error(err);
+                }
+                obs.next(conn);
+                return obs.complete(conn);
+            });
+        });
     }
 }

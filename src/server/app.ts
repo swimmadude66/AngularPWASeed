@@ -17,6 +17,7 @@ import {DatabaseService} from './services/db';
 import {SessionManager} from './services/session';
 import {HelpersService} from './services/helpers';
 import {LoggingService} from './services/logger';
+import {AuthService} from './services/auth';
 
 dotenv.config({silent: true});
 const APP_CONFIG: Config = {
@@ -27,7 +28,6 @@ const APP_CONFIG: Config = {
     log_level: process.env.MORGAN_LOG_LEVEL || 'short',
     client_root: process.env.CLIENT_ROOT || join(__dirname, '../client/'),
     max_workers: +(process.env.MAX_WORKERS || cpus().length),
-    universal: !!(+(process.env.UNIVERSAL || 1)),
 };
 
 if (cluster.isMaster) {
@@ -124,6 +124,8 @@ if (cluster.isMaster) {
     APP_CONFIG.db = db;
     const sessionManager = new SessionManager(db);
     APP_CONFIG.sessionManager = sessionManager;
+    const authService = new AuthService(db, loggingService);
+    APP_CONFIG.authService = authService;
 
     app.use(require('./middleware/auth')(APP_CONFIG));
 
