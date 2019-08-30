@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.10
 
 ARG BUILD_VERSION=local
 ARG environment_name=production
