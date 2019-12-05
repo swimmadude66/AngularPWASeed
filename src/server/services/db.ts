@@ -13,7 +13,7 @@ export class DatabaseService {
             host: process.env.DB_HOST || 'localhost',
             port: process.env.DB_PORT || 3306,
             database: process.env.DB_DATABASE || 'aker',
-            user: process.env.DB_USER || 'root',
+            user: process.env.DB_USER || 'aker',
             password: process.env.DB_PASSWORD || 'admin',
             charset: 'utf8mb4' // allow emojis
         }, config || {});

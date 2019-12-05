@@ -1,0 +1,37 @@
+version: '2.4'
+services:
+  mysql:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: aker
+      MYSQL_DATABASE: pwadb
+      MYSQL_USER: aker
+      MYSQL_PASSWORD: aker
+  pwa:
+    build: 
+      context: ./
+      dockerfile: ./dev.Dockerfile
+    volumes:
+      - ./:/build
+    ports:
+      - 3000:3000
+    command: 
+      - /bin/sh
+      - -c
+      - |
+        npm install
+        npm run dev
+    environment:
+      HTTPS: 0
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: pwadb
+      DB_USER: aker
+      DB_PASSWORD: aker
+volumes:
+  mysql-data:
