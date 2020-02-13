@@ -1,6 +1,12 @@
+import {skipWaiting, clientsClaim} from 'workbox-core';
+import {precacheAndRoute, createHandlerBoundToURL} from 'workbox-precaching';
+import {NavigationRoute, registerRoute, setCatchHandler} from 'workbox-routing';
+import {NetworkOnly, NetworkFirst, StaleWhileRevalidate, CacheFirst} from 'workbox-strategies';
+import {CacheableResponsePlugin} from 'workbox-cacheable-response';
+import {ExpirationPlugin} from 'workbox-expiration';
 
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+skipWaiting();
+clientsClaim();
 
 const noCorsPlugin = {
     requestWillFetch: ({event, request}) => {
@@ -8,28 +14,27 @@ const noCorsPlugin = {
     }
 };
 
-self.__precacheManifest = [].concat(self.__precacheManifest || []);
-workbox.precaching.precacheAndRoute(self.__precacheManifest, {
-    ignoreURLParametersMatching: [
-        /^utm_/i
-    ]
-});
+precacheAndRoute(self.__WB_MANIFEST);
 
-workbox.routing.registerNavigationRoute('index.html', {}); // always serve index, just like when the internet is live
-
-workbox.routing.registerRoute(
+registerRoute(
+    new NavigationRoute(
+        createHandlerBoundToURL('index.html')
+    )
+); // always serve index, just like when the internet is live
+    
+registerRoute(
     /^http:\/\/localhost(:[0-9]+)?\/browser-sync\//i,
-    new workbox.strategies.NetworkOnly(),
+    new NetworkOnly(),
     'GET'
 );
 
-workbox.routing.registerRoute(
+registerRoute(
     /\/(admin\/)?api\//i,
-    new workbox.strategies.NetworkFirst({ 
+    new NetworkFirst({ 
         networkTimeoutSeconds: 5, 
         cacheName: 'api-cache',
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200]
             }),
         ]
@@ -37,16 +42,16 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerRoute(
+registerRoute(
     /\/[0-9]+\..*?\.min\.js$/i, 
-    new workbox.strategies.NetworkFirst({ 
+    new NetworkFirst({ 
         networkTimeoutSeconds: 5, 
         cacheName: 'bundle-cache',
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200]
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 86400,
                 purgeOnQuotaError: true // Will refetch on page load
             })
@@ -55,15 +60,15 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerRoute(
+registerRoute(
     /\/assets\//i, 
-    new workbox.strategies.StaleWhileRevalidate({ 
+    new StaleWhileRevalidate({ 
         cacheName: 'asset-cache', 
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200],
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 86400,
                 purgeOnQuotaError: true // they are images, get rid of them for more important stuff
             })
@@ -72,15 +77,15 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerRoute(
+registerRoute(
     /\/fonts\//i, 
-    new workbox.strategies.StaleWhileRevalidate({ 
+    new StaleWhileRevalidate({ 
         cacheName: 'font-cache', 
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200],
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 86400,
                 purgeOnQuotaError: true // they are fonts, get rid of them for more important stuff
             })
@@ -90,23 +95,23 @@ workbox.routing.registerRoute(
 );
 
 // Cache the Google Fonts stylesheets with a stale-while-revalidate strategy.
-workbox.routing.registerRoute(
+registerRoute(
     /^https:\/\/fonts\.googleapis\.com/i,
-    new workbox.strategies.StaleWhileRevalidate({
+    new StaleWhileRevalidate({
         cacheName: 'google-fonts-stylesheets',
     })
 );
 
 // Cache the underlying font files with a cache-first strategy for 1 year.
-workbox.routing.registerRoute(
+registerRoute(
 /^https:\/\/fonts\.gstatic\.com/i,
-    new workbox.strategies.CacheFirst({
+    new CacheFirst({
         cacheName: 'google-fonts-webfonts',
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [0, 200],
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 60 * 60 * 24 * 365,
                 maxEntries: 30,
             }),
@@ -116,9 +121,9 @@ workbox.routing.registerRoute(
 
 
 // Catch-all for GETs to external resources to not make CORS requests
-workbox.routing.registerRoute(
+registerRoute(
     /^http.*/i,
-    new workbox.strategies.NetworkOnly({
+    new NetworkOnly({
         plugins: [
             noCorsPlugin
         ],
@@ -127,7 +132,7 @@ workbox.routing.registerRoute(
 );
 
 // This "catch" handler is triggered when any of the other routes throw an error
-workbox.routing.setCatchHandler(({url, event, params}) => {
+setCatchHandler(({url, event, params}) => {
     const request = event.request;
 
     switch (request.destination) {

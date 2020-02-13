@@ -247,7 +247,8 @@ const config = {
         new workbox.InjectManifest({
             swSrc: path.join(__dirname, './src/client/sw.js'),
             swDest: 'sw.js',
-            importsDirectory: 'wb-assets',
+            // importsDirectory: 'wb-assets',
+
             exclude: [
                 /styles\..*\.min\.js/i,     // empty bundle file from extractText
                 /[0-9]+\..*?\.min\.js$/i,   // lazy-loaded bundles
