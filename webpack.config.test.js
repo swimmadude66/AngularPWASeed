@@ -61,7 +61,9 @@ const config = {
                     {
                         loader:'sass-loader',
                         options: {
-                          includePaths: [path.join(__dirname, './src/client/scss')]
+                            sassOptions: {
+                                includePaths: [path.join(__dirname, './src/client/scss')]
+                            }
                         }
                     }
                 ]
@@ -94,7 +96,9 @@ const config = {
                     {
                         loader:'sass-loader',
                         options: {
-                            includePaths: [path.join(__dirname, './src/client/scss')]
+                            sassOptions: {
+                                includePaths: [path.join(__dirname, './src/client/scss')]
+                            }
                         }
                     }
                 ]
