@@ -1,12 +1,12 @@
-var path = require('path');
-var webpack = require('webpack');
-var MiniCssExtractPlugin = require('mini-css-extract-plugin');
-var autoprefixer = require('autoprefixer');
-var cssnano = require('cssnano');
-var AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
-var NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
+const path = require('path');
+const webpack = require('webpack');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const autoprefixer = require('autoprefixer');
+const cssnano = require('cssnano');
+const AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
+const NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
 
-var config = {
+const config = {
     mode: 'none',
     devtool: 'inline-source-map',
     output: {
@@ -44,7 +44,7 @@ var config = {
                 include: [path.join(__dirname, './src/client/components')],
                 use: [
                     {
-                        loader: 'raw-loader'
+                        loader: 'to-string-loader'
                     },
                     {
                         loader: 'postcss-loader',
@@ -61,7 +61,9 @@ var config = {
                     {
                         loader:'sass-loader',
                         options: {
-                          includePaths: [path.join(__dirname, './src/client/scss')]
+                            sassOptions: {
+                                includePaths: [path.join(__dirname, './src/client/scss')]
+                            }
                         }
                     }
                 ]
@@ -94,7 +96,9 @@ var config = {
                     {
                         loader:'sass-loader',
                         options: {
-                            includePaths: [path.join(__dirname, './src/client/scss')]
+                            sassOptions: {
+                                includePaths: [path.join(__dirname, './src/client/scss')]
+                            }
                         }
                     }
                 ]
@@ -151,7 +155,7 @@ var config = {
                 test: /\.html$/,
                 use: [
                     {
-                        loader: 'raw-loader'
+                        loader: 'html-loader'
                     }
                 ]
             },

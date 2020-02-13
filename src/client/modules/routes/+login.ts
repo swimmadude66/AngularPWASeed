@@ -1,19 +1,19 @@
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {SharedModule} from '@modules/shared';
-import {SignupComponent} from '@components/signup/component';
+import {LoginComponent} from '@components/login/component';
 
 @NgModule({
     imports: [
         SharedModule,
         RouterModule.forChild(
             [
-                {path: '', pathMatch: 'full', component: SignupComponent},
+                {path: '', pathMatch: 'full', component: LoginComponent},
             ]
         )
     ],
     declarations: [
-        SignupComponent
+        LoginComponent
     ]
 })
-export class SignupLazyModule {}
+export class LoginLazyModule {}

@@ -1,9 +1,9 @@
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
-import {BrowserModule} from '@angular/platform-browser';
+import {BrowserModule, BrowserTransferStateModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {SharedModule} from '@modules/shared';
-import {AppComponent, LoginComponent} from '@components/index';
+import {AppComponent} from '@components/app/component';
 import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
 
 @NgModule({
@@ -11,12 +11,13 @@ import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
         AppComponent
     ],
     imports: [
-        BrowserModule,
+        BrowserModule.withServerTransition({appId: 'demowebapp'}),
         BrowserAnimationsModule,
         SharedModule,
+        BrowserTransferStateModule,
         RouterModule.forRoot(
             [
-                {path: 'login', canActivate: [NotLoggedInGuard], component: LoginComponent},
+                {path: 'login', canLoad: [NotLoggedInGuard], canActivateChild: [NotLoggedInGuard], loadChildren: './routes/+login#LoginLazyModule'},
                 {path: 'signup', canLoad: [NotLoggedInGuard], canActivateChild: [NotLoggedInGuard], loadChildren: './routes/+signup#SignupLazyModule'},
                 {path: '', canLoad: [IsLoggedInGuard], canActivateChild: [IsLoggedInGuard], loadChildren: './routes/+demo#DemoLazyModule'},
             ]
@@ -24,7 +25,6 @@ import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
     ],
     declarations: [
         AppComponent,
-        LoginComponent
     ]
 })
 export class AppModule {}

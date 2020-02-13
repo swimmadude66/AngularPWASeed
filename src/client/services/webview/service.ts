@@ -1,15 +1,22 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
+import {Location as ngLocation} from '@angular/common';
+
 @Injectable({
     providedIn: 'root'
 })
 export class WebviewService {
 
     constructor(
+        private _location: ngLocation
     ) { }
 
     isWebview(): boolean {
-        if (/inwebview=1/i.test(document.location.search)) { // check manual flag for override
-            return true;
+        const urlParts = this._location.path(false).split('?', 2);       
+        if (urlParts && urlParts.length > 1) {
+            const search = urlParts[1];
+            if (/inwebview=1/i.test(search)) { // check manual flag for override
+                return true;   
+            }
         }
         
         if (window && window['Android']) { // Android with JavascriptInterface enabled

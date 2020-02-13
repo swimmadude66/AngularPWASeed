@@ -4,6 +4,7 @@ import * as uuid from 'uuid/v4';
 import {Observable} from 'rxjs';
 import {flatMap, switchMap} from 'rxjs/operators';
 import {Config} from '../models/config';
+import {User} from '../models/user';
 
 const COOKIE_OPTIONS = {
     path: '/',
@@ -14,31 +15,47 @@ const COOKIE_OPTIONS = {
 
 module.exports = (APP_CONFIG: Config) => {
     const router = Router();
+    const logger = APP_CONFIG.logger;
     const db = APP_CONFIG.db;
     const sessionManager = APP_CONFIG.sessionManager;
+    const authService = APP_CONFIG.authService;
 
     router.post('/signup', (req, res) => {
         const body = req.body;
         if (!body || !body.Email || !body.Password) {
-            return res.status(400).send('Email and Password are required fields');
+            return res.status(400).send({Error: 'Email and Password are required fields'});
         } else {
-            const salt = uuid().replace(/-/ig, '');
-            const passHash = createHash('sha512').update(`${salt}|${body.Password}`).digest('hex');
-            db.query('Insert into `users` (`Email`, `Salt`, `PassHash`, `Active`) VALUES(?, ?, ?, 1);', [body.Email, salt, passHash])
-            .pipe(
-                flatMap(result => sessionManager.createSession(result.insertId, JSON.stringify(res.useragent)))
-            )
+            const passwordValid = authService.validatePasswordCriteria(body.Password);
+            if (!passwordValid.Valid) {
+                return res.status(400).send({Error: passwordValid.Message});
+            }
+            return authService.signup(body.Email, body.Password)
             .subscribe(
-                result => {
-                    res.cookie(APP_CONFIG.cookie_name, result.SessionKey, {...COOKIE_OPTIONS, expires: new Date(result.Expires * 1000), secure: req.secure});
-                    return res.send();
+                user => {
+                    logger.log('Created User');
+                    return res.send({User: user});
                 },
                 err => {
-                    console.error(err);
-                    res.status(400).send('Could not complete signup');
+                    logger.logError(err);
+                    return res.status(err.Status || 500).send({Error: err.Message || 'Could not complete signup'});
                 }
             );
         }
+    });
+
+    router.post('/confirm-email', (req, res, next) => {
+        const body = req.body;
+        if (!body || !body.Email || !body.Confirm) {
+            return res.status(400).send({Error: 'Email and Confirm are required'});
+        }
+        return authService.confirmEmail(body.Email, body.Confirm)
+        .subscribe(
+            _ => res.send({Message: 'Email Confirmed'}),
+            err => {
+                logger.logError(err);
+                return res.status(err.Status || 500).send({Error: err.Message || 'Could not confirm email'})
+            }
+        );
     });
 
     router.post('/login', (req, res) => {
@@ -46,34 +63,21 @@ module.exports = (APP_CONFIG: Config) => {
         if (!body || !body.Email || !body.Password) {
             return res.status(400).send('Email and Password are required fields');
         } else {
-            db.query('Select `PassHash`, `UserId`, `Salt` from `users` where `Active`=1 AND `Email`=? LIMIT 1;', [body.Email])
+            let user: User;
+            authService.logIn(body.Email, body.Password)
             .pipe(
-                switchMap(
-                    (users: any[]) => {
-                        let user = {UserId: -100, PassHash: '12345', Salt: '12345'}; // use a fake user which will fail to avoid timing differences indicating existence of real users.
-                        if (users.length > 0) {
-                            user = users[0]
-                        }
-                        const compHash = createHash('sha512').update(`${user.Salt}|${body.Password}`).digest('hex');
-                        if (compHash === user.PassHash) {
-                            return sessionManager.createSession(user.UserId, JSON.stringify(res.useragent));
-                        } else {
-                            return Observable.throw('Incorrect username or password');
-                        }
-                    }
-                )
+                switchMap(userResult => {
+                    user = userResult;
+                    return sessionManager.createSession(user.UserId, JSON.stringify(req.useragent));
+                }),
             ).subscribe(
-                result => {
-                    res.cookie(APP_CONFIG.cookie_name, result.SessionKey, {...COOKIE_OPTIONS, expires: new Date(result.Expires * 1000), secure: req.secure});
-                    return res.send();
+                session => {
+                    res.cookie(APP_CONFIG.cookie_name, session.SessionKey, {...COOKIE_OPTIONS, expires: session.Expires, secure: req.secure});
+                    return res.send({User: user});
                 },
                 err => {
-                    if (err === 'Incorrect username or password') {
-                        return res.status(400).send('Incorrect username or password');
-                    } else {
-                        console.error(err);
-                        return res.status(500).send('Could not login at this time');
-                    }
+                    logger.logError(err);
+                    return res.status(err.Status || 500).send({Error: err.Message || 'Could not log you in'});
                 }
             )
         }
@@ -81,6 +85,35 @@ module.exports = (APP_CONFIG: Config) => {
 
     router.get('/valid', (req, res) => {
         return res.send(!!res.locals.usersession);
+    });
+
+    router.get('/isadmin', (req, res) => {
+        return res.send(!!(res.locals.usersession && res.locals.usersession.Role === 'admin'));
+    });
+
+    router.post('/logout', (req, res) => {
+        if (res.locals.usersession && res.locals.usersession.SessionKey && res.locals.usersession.UserId) {
+            res.clearCookie(APP_CONFIG.cookie_name, {...COOKIE_OPTIONS, secure: req.secure});
+            sessionManager.deactivateSession(res.locals.usersession.UserId, res.locals.usersession.SessionKey)
+            .subscribe(
+                _ => res.send({Message: 'Logged out'}),
+                err => {
+                    logger.logError(err);
+                    res.send({Message: 'Logged out'});
+                }
+            );
+        } else {
+           return res.send({Message: 'Could not log you out'});
+        }
+    });
+
+    // AuthGate
+    router.use((req, res, next) => {
+        if (!res.locals.usersession) {
+            return res.status(401).send('Unauthenticated');
+        } else {
+            return next();
+        }
     });
 
     router.get('/sessions', (req, res) => {
@@ -91,10 +124,10 @@ module.exports = (APP_CONFIG: Config) => {
         .subscribe(
             sessions => res.send(sessions),
             err => {
-                console.error(err);
-                res.status(500).send('Cannot fetch active sessions');
+                logger.logError(err);
+                res.status(err.Status || 500).send({Error: err.Message || 'Cannot fetch active sessions'});
             }
-        )
+        );
     });
 
     router.delete('/sessions/:sessionKey', (req, res) => {
@@ -107,28 +140,12 @@ module.exports = (APP_CONFIG: Config) => {
                         if (res.locals.usersession.SessionKey === sessionKey) {
                             res.clearCookie(APP_CONFIG.cookie_name, {...COOKIE_OPTIONS, secure: req.secure});
                         }
-                        return res.send(success);
+                        return res.send({Message: 'Session Deactivated'});
                     } else {
-                        return res.status(400).send('Could not find that session');
+                        return res.status(400).send({Error: 'Could not find that session'});
                     }
-                }  
-            )
-        }
-    });
-
-    router.post('/logout', (req, res) => {
-        if (res.locals.usersession && res.locals.usersession.SessionKey && res.locals.usersession.UserId) {
-            res.clearCookie(APP_CONFIG.cookie_name, {...COOKIE_OPTIONS, secure: req.secure});
-            sessionManager.deactivateSession(res.locals.usersession.UserId, res.locals.usersession.SessionKey)
-            .subscribe(
-                _ => res.send(true),
-                err => {
-                    console.error(err);
-                    res.send(true);
                 }
-            );
-        } else {
-           return res.send(false);
+            )
         }
     });
 

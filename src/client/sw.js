@@ -1,50 +1,40 @@
-workbox.skipWaiting();
-workbox.clientsClaim();
+import {skipWaiting, clientsClaim} from 'workbox-core';
+import {precacheAndRoute, createHandlerBoundToURL} from 'workbox-precaching';
+import {NavigationRoute, registerRoute, setCatchHandler} from 'workbox-routing';
+import {NetworkOnly, NetworkFirst, StaleWhileRevalidate, CacheFirst} from 'workbox-strategies';
+import {CacheableResponsePlugin} from 'workbox-cacheable-response';
+import {ExpirationPlugin} from 'workbox-expiration';
 
-var apiSync = new workbox.backgroundSync.Plugin('api_queue', {
-    maxRetentionTime: 24 * 60 // Retry for max of 24 Hours
-});
+skipWaiting();
+clientsClaim();
 
+const noCorsPlugin = {
+    requestWillFetch: ({event, request}) => {
+        return new Request(request, {mode: 'no-cors'});
+    }
+};
 
-workbox.routing.registerRoute(
-    /\/api\//i,
-    workbox.strategies.networkOnly({
-        plugins: [
-            apiSync,
-            new workbox.expiration.Plugin({
-                maxAgeSeconds: 86400,
-                purgeOnQuotaError: true // don't use up storage we need elsewhere
-            })
-        ]
-    }),
-    'POST'
-);
+precacheAndRoute(self.__WB_MANIFEST);
 
-workbox.routing.registerRoute(
-    /index\.html$/i,
-    workbox.strategies.networkFirst({ 
-        networkTimeoutSeconds: 5, 
-        cacheName: 'index-cache',
-        plugins: [
-            new workbox.cacheableResponse.Plugin({
-                statuses: [200],
-            }),
-            new workbox.expiration.Plugin({
-                maxEntries: 1, // THERE CAN BE ONLY ONE
-                purgeOnQuotaError: false // we need this
-            })
-        ]
-    }), 
+registerRoute(
+    new NavigationRoute(
+        createHandlerBoundToURL('index.html')
+    )
+); // always serve index, just like when the internet is live
+    
+registerRoute(
+    /^http:\/\/localhost(:[0-9]+)?\/browser-sync\//i,
+    new NetworkOnly(),
     'GET'
 );
 
-workbox.routing.registerRoute(
-    /\/api\/.+/i, 
-    workbox.strategies.networkFirst({ 
+registerRoute(
+    /\/(admin\/)?api\//i,
+    new NetworkFirst({ 
         networkTimeoutSeconds: 5, 
         cacheName: 'api-cache',
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200]
             }),
         ]
@@ -52,16 +42,16 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerRoute(
+registerRoute(
     /\/[0-9]+\..*?\.min\.js$/i, 
-    workbox.strategies.networkFirst({ 
+    new NetworkFirst({ 
         networkTimeoutSeconds: 5, 
         cacheName: 'bundle-cache',
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200]
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 86400,
                 purgeOnQuotaError: true // Will refetch on page load
             })
@@ -70,32 +60,15 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerRoute(
-    /^.*font.*\.((svg)|(woff(2?))|(eot)|(ttf))$/i, 
-    workbox.strategies.staleWhileRevalidate({ 
-        cacheName: 'font-cache', 
-        plugins: [
-            new workbox.cacheableResponse.Plugin({
-                statuses: [200],
-            }),
-            new workbox.expiration.Plugin({
-                maxAgeSeconds: 86400,
-                purgeOnQuotaError: true // they are fonts, get rid of them for more important stuff
-            })
-        ] 
-    }), 
-    'GET'
-);
-
-workbox.routing.registerRoute(
-    /^.*\/app\/.*\.((ico)|(jpg)|(png)|(svg))$/i, 
-    workbox.strategies.staleWhileRevalidate({ 
+registerRoute(
+    /\/assets\//i, 
+    new StaleWhileRevalidate({ 
         cacheName: 'asset-cache', 
         plugins: [
-            new workbox.cacheableResponse.Plugin({
+            new CacheableResponsePlugin({
                 statuses: [200],
             }),
-            new workbox.expiration.Plugin({
+            new ExpirationPlugin({
                 maxAgeSeconds: 86400,
                 purgeOnQuotaError: true // they are images, get rid of them for more important stuff
             })
@@ -104,10 +77,70 @@ workbox.routing.registerRoute(
     'GET'
 );
 
-workbox.routing.registerNavigationRoute('/index.html'); // always serve index, just like when the internet is live
+registerRoute(
+    /\/fonts\//i, 
+    new StaleWhileRevalidate({ 
+        cacheName: 'font-cache', 
+        plugins: [
+            new CacheableResponsePlugin({
+                statuses: [200],
+            }),
+            new ExpirationPlugin({
+                maxAgeSeconds: 86400,
+                purgeOnQuotaError: true // they are fonts, get rid of them for more important stuff
+            })
+        ] 
+    }), 
+    'GET'
+);
 
-self.addEventListener('fetch', function() {}); // empty fetch so google will prompt for install
+// Cache the Google Fonts stylesheets with a stale-while-revalidate strategy.
+registerRoute(
+    /^https:\/\/fonts\.googleapis\.com/i,
+    new StaleWhileRevalidate({
+        cacheName: 'google-fonts-stylesheets',
+    })
+);
 
-self.__precacheManifest = [].concat(self.__precacheManifest || []);
-workbox.precaching.suppressWarnings();
-workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
+// Cache the underlying font files with a cache-first strategy for 1 year.
+registerRoute(
+/^https:\/\/fonts\.gstatic\.com/i,
+    new CacheFirst({
+        cacheName: 'google-fonts-webfonts',
+        plugins: [
+            new CacheableResponsePlugin({
+                statuses: [0, 200],
+            }),
+            new ExpirationPlugin({
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+                maxEntries: 30,
+            }),
+        ],
+    })
+);
+
+
+// Catch-all for GETs to external resources to not make CORS requests
+registerRoute(
+    /^http.*/i,
+    new NetworkOnly({
+        plugins: [
+            noCorsPlugin
+        ],
+    }),
+    'GET'
+);
+
+// This "catch" handler is triggered when any of the other routes throw an error
+setCatchHandler(({url, event, params}) => {
+    const request = event.request;
+
+    switch (request.destination) {
+        case 'document':
+            return caches.match('index.html');
+        case 'image':
+            return caches.match('assets/images/empty.png');
+        default:
+            return Response.error();
+    }
+});

@@ -2,6 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { Observable, Subject, of as ObservableOf, ReplaySubject, Subscription, timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BrowserStorageService } from '@services/caching/browser_storage/service';
+import { ServerSideService } from '@services/ssr';
 
 // interface only used locally
 interface CacheValue<T> {
@@ -29,47 +30,51 @@ export class HttpCacheService implements OnDestroy {
     private _reaper: Subscription;
 
     constructor(
-        private _store: BrowserStorageService
+        private _store: BrowserStorageService,
+        private _ssr: ServerSideService
     ) {
-        try {
-            const shcIndexString = this._store.getSession('shcindex');
-            if (shcIndexString && shcIndexString.length) {
-                const shcIndex = JSON.parse(shcIndexString);
-                shcIndex.forEach((cacheKey: string) => {
-                    const cv = this._store.getSession(`shc_${cacheKey}`);
-                    if (cv && cv.length) {
-                        try {
-                            const value = JSON.parse(cv);
-                            this._cache[cacheKey] = value;
-                        } catch (e) {
-                            // do nothing
+        if (this._ssr.isBrowser()) {
+            console.log('platform is browser');
+            try {
+                const shcIndexString = this._store.getSession('shcindex');
+                if (shcIndexString && shcIndexString.length) {
+                    const shcIndex = JSON.parse(shcIndexString);
+                    shcIndex.forEach((cacheKey: string) => {
+                        const cv = this._store.getSession(`shc_${cacheKey}`);
+                        if (cv && cv.length) {
+                            try {
+                                const value = JSON.parse(cv);
+                                this._cache[cacheKey] = value;
+                            } catch (e) {
+                                // do nothing
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            } catch (e) {
+                // do nothing
             }
-        } catch (e) {
-            // do nothing
-        }
 
-        this._reaper = timer(0, 60*1000)
-        .subscribe(
-            _ => {
-                const now = new Date().valueOf();
-                Object.keys(this._cache).forEach(ck => {
-                    const val: CacheValue<any> = this._cache[ck];
-                    if (val.expiration >=0 && val.expiration <= now) {
-                        delete this._cache[ck];
-                        try {
-                            this._store.removeSession(`shc_${ck}`);
-                            this._store.setSession(`shcindex`, JSON.stringify(Object.keys(this._cache)));
-                        } catch (e) {
-                            // do nothing
+            this._reaper = timer(0, 60*1000)
+            .subscribe(
+                _ => {
+                    const now = new Date().valueOf();
+                    Object.keys(this._cache).forEach(ck => {
+                        const val: CacheValue<any> = this._cache[ck];
+                        if (val.expiration >=0 && val.expiration <= now) {
+                            delete this._cache[ck];
+                            try {
+                                this._store.removeSession(`shc_${ck}`);
+                                this._store.setSession(`shcindex`, JSON.stringify(Object.keys(this._cache)));
+                            } catch (e) {
+                                // do nothing
+                            }
                         }
-                    }
-                });
-                this._store.setSession(`shcindex`, JSON.stringify(Object.keys(this._cache)));
-            }
-        );
+                    });
+                    this._store.setSession(`shcindex`, JSON.stringify(Object.keys(this._cache)));
+                }
+            );
+        }
     }
 
     ngOnDestroy() {

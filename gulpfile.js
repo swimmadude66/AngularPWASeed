@@ -1,32 +1,40 @@
-var gulp        	= require('gulp');
-var webpack         = require('webpack');
-var webpackConfig   = require('./webpack.config');
-var browserSync     = require('browser-sync-webpack-plugin');
-var ts_project	    = require('gulp-typescript').createProject('./src/server/tsconfig.json');
-var spawn           = require('child_process').spawn;
-var server_proc;
+const {src, dest, series, watch, parallel} = require('gulp');
+const {join} = require('path');
+const {spawn} = require('child_process');
+const webpack = require('webpack');
+const browserSync = require('browser-sync-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const webpackConfig = require('./webpack.config');
+const ts_project = require('gulp-typescript').createProject('./src/server/tsconfig.json');
+let server_proc;
 
-gulp.task('compile-node', function() {
-	return gulp.src('./src/server/**/*.ts')
+function compileNode() {
+    return src('./src/server/**/*.ts')
 	.pipe(ts_project()).js
-	.pipe(gulp.dest('dist/server/'));
-});
+	.pipe(dest('dist/server/'));
+}
 
-gulp.task('start-server', ['compile-node'], function() {
+function startServer(cb) {
     if (server_proc) {
         server_proc.kill();
         server_proc = undefined;
     }
-    server_proc = spawn('node', ['--inspect=5959', 'dist/server/app.js'], {
+    server_proc = spawn('node', ['--inspect=5858', 'dist/server/app.js'], {
         cwd: __dirname,
         stdio: [0, 1, 2, 'ipc']
     });
-});
+    return cb();
+}
 
-gulp.task('webpack', function(done) {
-    var config = webpackConfig;
+function watchServer() {
+    console.log('Watching files for changes...');
+    return watch(['src/server/**/*.ts', '.env'], series(compileNode, startServer));
+}
+
+function runWebpack(done) {
+    const config = webpackConfig;
     process.env.BUILD_MODE = 'production';
-    return webpack(config, function(err, stats){
+    return webpack(config, (err, stats) => {
         if (err) {
             console.error(err);
         }
@@ -36,32 +44,30 @@ gulp.task('webpack', function(done) {
         console.log(stats.toString());
         return done(err);
     });
-});
+}
 
-gulp.task('webpack-watch', function() {
-    var config = webpackConfig;
-    process.env.BUILD_MODE = 'development';
-    config.watch = true;
-    config.cache = true;
-    config.bail = false;
-    config.devtool = 'inline-eval-cheap-source-map';
-    config.module.rules.push(
-        {
-            enforce: 'pre',
-            test: /\.ts$/,
-            use: 'source-map-loader'
-        }
-    );
-    config.plugins.push(
-        new browserSync({
-            host: 'localhost',
-            port: 3001,
-            proxy: 'localhost:3000',
-            ws: true,
-            open: !(process.env.DOCKER_MODE)
-        })
-    );
-    webpack(config, function(err, stats) {
+function analyzeWebpack(done) {
+    const config = {
+        ...webpackConfig,
+        performance: {
+            hints: 'warning',
+            maxAssetSize: 1000000, // 1MB
+            maxEntrypointSize: 1000000, // 1MB
+        },
+        plugins: [
+            ...webpackConfig.plugins,
+            new BundleAnalyzerPlugin({
+                analyzerMode: 'static',
+                reportFilename: join(__dirname, 'reports/client/bundles.html'),
+                defaultSizes: 'gzip',
+                openAnalyzer: true,
+                generateStatsFile: true,
+                statsFilename: join(__dirname, 'reports/client/stats.json'),
+            }),
+        ]
+    };
+    process.env.BUILD_MODE = 'production';
+    return webpack(config, (err, stats) => {
         if (err) {
             console.error(err);
         }
@@ -69,13 +75,48 @@ gulp.task('webpack-watch', function() {
             stats.compilation.errors.forEach(function(e){console.error(e,'\n');});
         }
         console.log(stats.toString());
+        return done(err);
     });
-});
+}
 
-gulp.task('watch', ['start-server', 'webpack-watch'], function() {
-    console.log('watching for changes...');
-    gulp.watch(['src/server/**/*.ts', '.env'], ['start-server']);
-});
+function watchWebpack(done) {
+    const config = webpackConfig;
+    process.env.BUILD_MODE = 'development';
+    return webpack({
+            ...config,
+            watch: true,
+            cache: true,
+            bail: false,
+            devtool: 'eval-source-map',
+            plugins: [
+                ...config.plugins || [],
+                new browserSync({
+                    host: 'localhost',
+                    port: 3001,
+                    proxy: 'localhost:3000',
+                    ws: true,
+                    open: !(process.env.DOCKER_MODE)
+                })
+            ]
+        }, 
+        (err, stats) => {
+        if (err) {
+            console.error(err);
+        }
+        if (stats.hasErrors() && stats.compilation.errors) {
+            stats.compilation.errors.forEach(function(e){console.error(e,'\n');});
+        }
+        console.log(stats.toString());
+        return done(err);
+    });
+}
 
-// Default Task
-gulp.task('default', ['compile-node', 'webpack']);
+const build = parallel(compileNode, runWebpack);
+
+exports.compileNode = compileNode;
+exports.startServer = series(compileNode, startServer);
+exports.webpack = runWebpack;
+exports.analyze = analyzeWebpack;
+exports.build = build;
+exports.watch = parallel(watchWebpack, series(compileNode, startServer, watchServer));
+exports.default = build;

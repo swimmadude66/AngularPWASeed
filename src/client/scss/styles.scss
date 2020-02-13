@@ -5,7 +5,6 @@
 @import '_helpers';
 @import '_buttons';
 @import '_font';
-@import '_animations';
 
 html, body {
     height: 100%; // Default to full page
@@ -21,6 +20,6 @@ body {
 }
 
 .error-text {
-    color: $error_color;
+    color: $error-color;
     font-size: 1.4rem;
 }

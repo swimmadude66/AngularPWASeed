@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.10
 
 ARG BUILD_VERSION=local
 ARG environment_name=production
@@ -18,7 +18,7 @@ chromium \
 && npm test \
 && apk del \
 chromium \
-&& npm run build \
+&& npm run buildssr \
 && mkdir -p -m 0777 /app/dist \
 && cp -R dist/* /app/dist \
 && cp package.json /app \

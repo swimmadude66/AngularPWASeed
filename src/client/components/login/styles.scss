@@ -6,10 +6,11 @@
     }
 }
 
-.signup-form-container {
+.login-form-container {
     padding: 2rem 3rem;
+    
     @media(min-width: $screen-md-min) {
-        background: #FFF;
+        background: #efefef;
         border: 0.2rem outset #AAA;
         border-radius: $base-border-radius;
         box-shadow: 0.5rem 0.7rem 0.5rem #DDD;
@@ -19,5 +20,5 @@
 .form-title {
     font-size: 3rem;
     margin: 2rem auto;
-    color: $main_color;
+    color: $main-color;
 }

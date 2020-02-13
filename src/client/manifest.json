@@ -1,7 +1,7 @@
 {
     "name": "Demo App",
     "short_name": "Demo App",
-    "description": "Demo application for learning Angular 7",
+    "description": "Demo application for learning Angular 8",
     "lang": "en-US",
     "scope": "/",
     "start_url": "./index.html",
