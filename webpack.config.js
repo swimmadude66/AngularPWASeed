@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const workbox = require('workbox-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const HtmlWebpackExcludeAssetsPlugin = require('html-webpack-exclude-assets-plugin');
+const HtmlWebpackSkipAssetsPlugin = require('html-webpack-skip-assets-plugin').HtmlWebpackSkipAssetsPlugin;
 const HtmlWebpackLinkTypePlugin = require('html-webpack-link-type-plugin').HtmlWebpackLinkTypePlugin;
 const NoModulePlugin = require('webpack-nomodule-plugin').WebpackNoModulePlugin;
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -204,11 +204,11 @@ const config = {
             hash: false,
             showErrors: false,
             excludeAssets: [/styles\..*js/i],
-            chunksSortMode: function(a,b) {
-                return bundles.findIndex(pattern => pattern.test(a.names[0])) - bundles.findIndex(pattern => pattern.test(b.names[0]));
+            chunksSortMode: (a,b) =>   {
+                return bundles.findIndex(pattern => pattern.test(a)) - bundles.findIndex(pattern => pattern.test(b));
             },
         }),
-        new HtmlWebpackExcludeAssetsPlugin(),
+        new HtmlWebpackSkipAssetsPlugin(),
         new HtmlWebpackLinkTypePlugin(),
         new NoModulePlugin({filePatterns: ['polyfills.**.js']}),
         new AotPlugin({
