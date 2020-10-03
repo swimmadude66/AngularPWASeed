@@ -13,7 +13,6 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 const TerserPlugin  = require('terser-webpack-plugin');
 const AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
 const NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
-const ModuleConcatenationPlugin = webpack.optimize.ModuleConcatenationPlugin;
 const bundles = [/^polyfills/i, /^commons(~)?/i, /^vendors~/i, /^app/i, /^styles/i, /.*/];
 
 const config = {
@@ -45,14 +44,26 @@ const config = {
                         loader: 'to-string-loader'
                     },
                     {
+                        loader: 'css-loader',
+                        options: {
+                            // url: false
+                        }
+                    },
+                    {
+                        loader:'resolve-url-loader',
+                        options: {
+                            root: path.join(__dirname, './src/client'),
+                            debug: true
+                        }
+                    },
+                    {
                         loader: 'postcss-loader',
                         options: {
-                            ident: 'postcss',
-                            plugins: function(loader){
-                                return [
+                            postcssOptions: {
+                                plugins: [
                                     autoprefixer({remove: false, flexbox: true}),
                                     cssnano({zindex: false})
-                                ];
+                                ]
                             }
                         }
                     },
@@ -69,12 +80,15 @@ const config = {
             {
                 test: /\.scss$/,
                 include: [
-                    path.join(__dirname, './node_modules'), 
-                    path.join(__dirname, './src/client/scss')
+                    path.join(__dirname, './node_modules'),
+                    path.join(__dirname, './src/client/scss'),
                 ],
                 use: [
                     {
-                        loader: MiniCssExtractPlugin.loader
+                        loader: MiniCssExtractPlugin.loader,
+                        options: {
+                            esModule: true,
+                        },
                     },
                     {
                         loader: 'css-loader'
@@ -82,13 +96,18 @@ const config = {
                     {
                         loader: 'postcss-loader',
                         options: {
-                            ident: 'postcss',
-                            plugins: function(loader){
-                                return [
+                            postcssOptions: {
+                                plugins: [
                                     autoprefixer({remove: false, flexbox: true}),
                                     cssnano({zindex: false})
-                                ];
+                                ],
                             }
+                        }
+                    },
+                    {
+                        loader:'resolve-url-loader',
+                        options: {
+                            root: path.join(__dirname, './src/client')
                         }
                     },
                     {
@@ -98,7 +117,7 @@ const config = {
                                 includePaths: [path.join(__dirname, './src/client/scss')]
                             }
                         }
-                    }
+                    },
                 ]
             },
             // fonts
@@ -126,7 +145,7 @@ const config = {
             },
              // images
              {
-                test: /assets\/.*?\.((jpg)|(png)|(gif)|(bmp)|(webp))/,
+                test: /assets\/.*?\.((jpg)|(png)|(gif)|(bmp)|(webp)|(svg))/,
                 loader: 'url-loader',
                 // exclude: [path.join(__dirname, './src/client/assets')],
                 options: {
@@ -134,27 +153,15 @@ const config = {
                     name: 'assets/images/[name].[ext]'
                 }
             },
-            {
-                test: /\.svg/,
-                exclude: [/font(s)?/i, /\.svg\.js/],
-                use: [
-                    {
-                        loader: 'url-loader',
-                        options: {
-                            limit: 10*1024,
-                            name: 'assets/images/[name].svg'
-                        }
-                    }
-                ]
-            },
             // templateUrl
-            { 
+            {
                 test: /\.html$/,
                 use: 'html-loader'
             }
         ]
     },
     optimization: {
+        // runtimeChunk: 'single',
         flagIncludedChunks: true,
         occurrenceOrder: true,
         sideEffects: true,
@@ -164,9 +171,9 @@ const config = {
         splitChunks: {
             hidePathInfo: true,
             minSize: 30000,
-            maxAsyncRequests: 5,
-            maxInitialRequests: 3,
-            chunks: function (chunk) {
+            maxSize: 977000, // try and stay below recomended size
+            enforceSizeThreshold: 2097152, // HARD limit to 2MB
+            chunks: (chunk) => {
                 return chunk.name !== 'polyfills';
             },
             cacheGroups: {
@@ -185,7 +192,6 @@ const config = {
         minimize: true,
     },
     plugins: [
-        new ModuleConcatenationPlugin(),
         new TerserPlugin({
             parallel: true,
             sourceMap: process.env.BUILD_MODE === 'development',
@@ -223,24 +229,26 @@ const config = {
             exclude: /node_modules/,
             failOnError: true
         }),
-        new CopyWebpackPlugin([
-            {
-                from: path.join(__dirname, './src/client/assets'),
-                to: path.join(__dirname, './dist/client/assets')
-            },
-            {
-                from: path.join(__dirname, './src/client/robots.txt'),
-                to: path.join(__dirname, './dist/client/robots.txt')
-            },
-            {
-                from: path.join(__dirname, './src/client/manifest.json'),
-                to: path.join(__dirname, './dist/client/manifest.json')
-            },
-            {
-                from: path.join(__dirname, './src/client/.well-known'),
-                to: path.join(__dirname, './dist/client/.well-known')
-            }
-        ]),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: path.join(__dirname, './src/client/assets'),
+                    to: path.join(__dirname, './dist/client/assets')
+                },
+                {
+                    from: path.join(__dirname, './src/client/robots.txt'),
+                    to: path.join(__dirname, './dist/client/robots.txt')
+                },
+                {
+                    from: path.join(__dirname, './src/client/manifest.json'),
+                    to: path.join(__dirname, './dist/client/manifest.json')
+                },
+                {
+                    from: path.join(__dirname, './src/client/.well-known'),
+                    to: path.join(__dirname, './dist/client/.well-known')
+                }
+            ]
+        }),
         new NormalModuleReplacementPlugin(/environments\/environment/, function(resource) {
             resource.request = resource.request.replace(/environment$/, (process.env.BUILD_MODE === 'development' ? 'devEnvironment':'prodEnvironment'));
         }),
