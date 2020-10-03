@@ -1,5 +1,4 @@
 import {join} from 'path';
-import {createHmac} from 'crypto';
 import {createServer} from 'http';
 import {cpus} from 'os';
 import * as cluster from 'cluster';
@@ -19,7 +18,9 @@ import {HelpersService} from './services/helpers';
 import {LoggingService} from './services/logger';
 import {AuthService} from './services/auth';
 
-dotenv.config({silent: true});
+dotenv.config({
+    debug: false // enable to see logs for set vars
+});
 const APP_CONFIG: Config = {
     environment: process.env.ENVIRONMENT || 'dev',
     cookie_name: process.env.COOKIE_NAME || '__cookie_name',
@@ -70,7 +71,7 @@ if (cluster.isMaster) {
 } else {
     const loggingService = new LoggingService();
     APP_CONFIG.logger = loggingService;
-    
+
     const app = express();
     app.use(compress());
     app.use(userAgent.express());
@@ -79,7 +80,7 @@ if (cluster.isMaster) {
     app.use(cookieParser(APP_CONFIG.cookie_secret));
     app.use(
         morgan(
-            APP_CONFIG.log_level || ((tokens, req, res) => LoggingService.customLogger(tokens, req, res)), 
+            APP_CONFIG.log_level || ((tokens, req, res) => LoggingService.customLogger(tokens, req, res)),
             {
                 stream: loggingService.logStream
             }
