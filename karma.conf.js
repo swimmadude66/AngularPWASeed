@@ -7,7 +7,7 @@ module.exports = function(config) {
         basePath: '',
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['mocha'],
+        frameworks: ['webpack', 'mocha'],
         // list of files / patterns to load in the browser
         files: [
             'src/client/tests/index.ts',

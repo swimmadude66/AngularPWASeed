@@ -11,8 +11,6 @@ const config = {
     devtool: 'inline-source-map',
     output: {
         filename: '[name].spec.js',
-        path: path.join(__dirname, './tests/client'),
-        pathinfo: true
     },
     resolve: {
         extensions: ['.ts', '.js', '.json', '.scss', '.css']
@@ -47,10 +45,16 @@ const config = {
                         loader: 'to-string-loader'
                     },
                     {
+                        loader: 'css-loader',
+                        options: {
+                            esModule: false
+                        }
+                    },
+                    {
                         loader: 'postcss-loader',
                         options: {
                             ident: 'postcss',
-                            plugins: function(loader){
+                            plugins: (loader) => {
                                 return [
                                     autoprefixer({remove: false, flexbox: true}),
                                     cssnano({zindex: false})
@@ -71,12 +75,15 @@ const config = {
             {
                 test: /\.scss$/,
                 include: [
-                    path.join(__dirname, './node_modules'), 
+                    path.join(__dirname, './node_modules'),
                     path.join(__dirname, './src/client/scss')
                 ],
                 use: [
                     {
-                        loader: MiniCssExtractPlugin.loader
+                        loader: MiniCssExtractPlugin.loader,
+                        options: {
+                            esModule: true
+                        }
                     },
                     {
                         loader: 'css-loader'
@@ -151,7 +158,7 @@ const config = {
                 ]
             },
             // templateUrl
-            { 
+            {
                 test: /\.html$/,
                 use: [
                     {

@@ -1,8 +1,5 @@
 import {Router} from 'express';
-import {createHash} from 'crypto';
-import * as uuid from 'uuid/v4';
-import {Observable} from 'rxjs';
-import {flatMap, switchMap} from 'rxjs/operators';
+import {switchMap} from 'rxjs/operators';
 import {Config} from '../models/config';
 import {User} from '../models/user';
 

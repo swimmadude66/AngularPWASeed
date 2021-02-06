@@ -87,6 +87,12 @@ function watchWebpack(done) {
             watch: true,
             cache: true,
             bail: false,
+            infrastructureLogging: {
+                level: 'verbose'
+            },
+            stats: {
+                logging: 'verbose'
+            },
             devtool: 'eval-source-map',
             plugins: [
                 ...config.plugins || [],
@@ -98,13 +104,13 @@ function watchWebpack(done) {
                     open: !(process.env.DOCKER_MODE)
                 })
             ]
-        }, 
+        },
         (err, stats) => {
         if (err) {
             console.error(err);
         }
         if (stats.hasErrors() && stats.compilation.errors) {
-            stats.compilation.errors.forEach(function(e){console.error(e,'\n');});
+            stats.compilation.errors.forEach((e) => {console.error(e,'\n');});
         }
         console.log(stats.toString());
         return done(err);

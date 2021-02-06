@@ -10,16 +10,17 @@ const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
-const TerserPlugin  = require('terser-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const AotPlugin = require('@ngtools/webpack').AngularCompilerPlugin;
 const NormalModuleReplacementPlugin = webpack.NormalModuleReplacementPlugin;
+const DefinePlugin = webpack.DefinePlugin;
 const bundles = [/^polyfills/i, /^commons(~)?/i, /^vendors~/i, /^app/i, /^styles/i, /.*/];
 
 const config = {
     mode: 'none',
     entry: {
-        app: path.join(__dirname,'./src/client/main.ts'),
-        polyfills: path.join(__dirname,'./src/client/polyfills.ts'),
+        app: path.join(__dirname, './src/client/main.ts'),
+        polyfills: path.join(__dirname, './src/client/polyfills.ts'),
         styles: path.join(__dirname, './src/client/scss/styles.scss')
     },
     output: {
@@ -29,7 +30,7 @@ const config = {
     },
     resolve: {
         extensions: ['.ts', '.js', '.json', '.scss', '.css'],
-        mainFields: [ 'module' ],
+        mainFields: ['module', 'browser', 'main'],
         alias: {
             '/assets': path.join(__dirname, './src/client/assets')
         }
@@ -50,14 +51,7 @@ const config = {
                     {
                         loader: 'css-loader',
                         options: {
-                            // url: false
-                        }
-                    },
-                    {
-                        loader:'resolve-url-loader',
-                        options: {
-                            root: path.join(__dirname, './src/client'),
-                            debug: true
+                            esModule: false
                         }
                     },
                     {
@@ -65,14 +59,14 @@ const config = {
                         options: {
                             postcssOptions: {
                                 plugins: [
-                                    autoprefixer({remove: false, flexbox: true}),
-                                    cssnano({zindex: false})
+                                    autoprefixer({ remove: false, flexbox: true }),
+                                    cssnano({ zindex: false })
                                 ]
                             }
                         }
                     },
                     {
-                        loader:'sass-loader',
+                        loader: 'sass-loader',
                         options: {
                             sassOptions: {
                                 includePaths: [path.join(__dirname, './src/client/scss')]
@@ -102,20 +96,14 @@ const config = {
                         options: {
                             postcssOptions: {
                                 plugins: [
-                                    autoprefixer({remove: false, flexbox: true}),
-                                    cssnano({zindex: false})
+                                    autoprefixer({ remove: false, flexbox: true }),
+                                    cssnano({ zindex: false })
                                 ],
                             }
                         }
                     },
                     {
-                        loader:'resolve-url-loader',
-                        options: {
-                            root: path.join(__dirname, './src/client')
-                        }
-                    },
-                    {
-                        loader:'sass-loader',
+                        loader: 'sass-loader',
                         options: {
                             sassOptions: {
                                 includePaths: [path.join(__dirname, './src/client/scss')]
@@ -136,19 +124,19 @@ const config = {
             },
             {
                 test: /font(s)?\.svg/,
-                exclude:  /\.svg\.js/,
+                exclude: /\.svg\.js/,
                 use: [
                     {
                         loader: 'url-loader',
                         options: {
-                            limit: 10*1024,
+                            limit: 10 * 1024,
                             name: 'fonts/[name].svg'
                         }
                     }
                 ]
             },
-             // images
-             {
+            // images
+            {
                 test: /assets\/.*?\.((jpg)|(png)|(gif)|(bmp)|(webp)|(svg))/,
                 loader: 'url-loader',
                 // exclude: [path.join(__dirname, './src/client/assets')],
@@ -160,19 +148,26 @@ const config = {
             // templateUrl
             {
                 test: /\.html$/,
-                use: 'html-loader'
+                use: [
+                    {
+                        loader: 'html-loader',
+                        options: {
+                            minimize: true
+                        }
+                    }
+                ]
             }
         ]
     },
     optimization: {
         // runtimeChunk: 'single',
         flagIncludedChunks: true,
-        occurrenceOrder: true,
         sideEffects: true,
         usedExports: true,
         concatenateModules: true,
         providedExports: true,
         splitChunks: {
+            chunks: 'async',
             hidePathInfo: true,
             minSize: 30000,
             maxSize: 977000, // try and stay below recomended size
@@ -184,6 +179,7 @@ const config = {
                 vendors: {
                     test: /[\\/]node_modules[\\/]/,
                     priority: -10,
+                    reuseExistingChunk: true,
                 },
                 default: {
                     name: 'commons',
@@ -191,15 +187,13 @@ const config = {
                     reuseExistingChunk: true,
                     priority: -20
                 }
-              }
+            }
         },
         minimize: true,
     },
     plugins: [
         new TerserPlugin({
             parallel: true,
-            sourceMap: process.env.BUILD_MODE === 'development',
-            cache: true,
             terserOptions: {
                 compress: true,
                 output: {
@@ -214,19 +208,19 @@ const config = {
             hash: false,
             showErrors: false,
             excludeAssets: [/styles\..*js/i],
-            chunksSortMode: (a,b) =>   {
+            chunksSortMode: (a, b) => {
                 return bundles.findIndex(pattern => pattern.test(a)) - bundles.findIndex(pattern => pattern.test(b));
             },
         }),
         new HtmlWebpackSkipAssetsPlugin(),
         new HtmlWebpackLinkTypePlugin(),
-        new NoModulePlugin({filePatterns: ['polyfills.**.js']}),
+        new NoModulePlugin({ filePatterns: ['polyfills.**.js'] }),
         new AotPlugin({
             tsConfigPath: path.join(__dirname, './src/client/tsconfig.app.json'),
             mainPath: path.join(__dirname, './src/client/main.ts'),
             typeChecking: false,
         }),
-        new MiniCssExtractPlugin ({
+        new MiniCssExtractPlugin({
             filename: '[name].[contenthash].min.css'
         }),
         new CircularDependencyPlugin({
@@ -253,13 +247,18 @@ const config = {
                 }
             ]
         }),
-        new NormalModuleReplacementPlugin(/environments\/environment/, function(resource) {
-            resource.request = resource.request.replace(/environment$/, (process.env.BUILD_MODE === 'development' ? 'devEnvironment':'prodEnvironment'));
+        new NormalModuleReplacementPlugin(/environments\/environment/, function (resource) {
+            resource.request = resource.request.replace(/environment$/, (process.env.BUILD_MODE === 'development' ? 'devEnvironment' : 'prodEnvironment'));
+        }),
+        new DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+            'process.env.NODE_DEBUG': JSON.stringify(process.env.NODE_DEBUG),
+            'process.type': JSON.stringify(process.type),
+            'process.version': JSON.stringify(process.version),
         }),
         new workbox.InjectManifest({
             swSrc: path.join(__dirname, './src/client/sw.js'),
             swDest: 'sw.js',
-            // importsDirectory: 'wb-assets',
 
             exclude: [
                 /styles\..*\.min\.js/i,     // empty bundle file from extractText
