@@ -28,7 +28,11 @@ const config = {
         pathinfo: process.env.BUILD_MODE === 'development',
     },
     resolve: {
-        extensions: ['.ts', '.js', '.json', '.scss', '.css']
+        extensions: ['.ts', '.js', '.json', '.scss', '.css'],
+        mainFields: [ 'module' ],
+        alias: {
+            '/assets': path.join(__dirname, './src/client/assets')
+        }
     },
     module: {
         rules: [

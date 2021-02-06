@@ -1,14 +1,14 @@
 import {Component, Output, ViewChild, ElementRef, forwardRef, EventEmitter, Input} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR, AbstractControl} from '@angular/forms';
-import {FormErrorParser} from '@core/index';
-import {MaskService} from '@services/index';
+import {FormErrorParser} from '@core';
+import {MaskService} from '@services';
 
 export const INPUT_GROUP_VALUE_ACCESSOR : any = {
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => InputGroupComponent),
     multi: true
 };
-  
+
 type MASK = 'CURRENCY' | 'DATE' | 'PHONE';
 
 @Component({
@@ -51,7 +51,7 @@ export class InputGroupComponent implements ControlValueAccessor {
     }
 
     private _maskType: MASK;
-    
+
     pristine: boolean = true;
     blurred: boolean = false;
     focused: boolean = false;
@@ -69,8 +69,8 @@ export class InputGroupComponent implements ControlValueAccessor {
             || err.passwordSymbols
             || err.passwordComplexity);
     }
-    
-    private _onChange: Function; 
+
+    private _onChange: Function;
     private _onTouch: Function;
     private _lastLength: number = 0;
 
@@ -111,7 +111,7 @@ export class InputGroupComponent implements ControlValueAccessor {
             this._lastLength = value.length;
         }
         this.emitValue(outputValue);
-        
+
     }
 
     onTouch(event) {

@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import { ToastService } from '@services/index';
+import { ToastService } from '@services';
 import { take, pairwise } from 'rxjs/operators';
-import { ToastType } from '@models/index';
+import { ToastType } from '@models';
 
 describe('ToastService', () => {
     let toastService: ToastService;

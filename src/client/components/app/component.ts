@@ -1,9 +1,9 @@
 import {Component, OnInit} from '@angular/core';
 import {distinctUntilChanged} from 'rxjs/operators';
-import {Animations} from '@core/animations/index';
+import {Animations} from '@core/animations';
 import {SubscriberComponent} from '@core/component/subscriber';
 import {Toast} from '@models/shared/toast';
-import {ConnectionService, ToastService, WebviewService} from '@services/index';
+import {ConnectionService, ToastService, WebviewService} from '@services';
 
 @Component({
     selector: 'app',

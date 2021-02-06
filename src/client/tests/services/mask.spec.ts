@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import { MaskService } from '@services/index';
+import { MaskService } from '@services';
 
 describe('MaskService', () => {
     let maskService: MaskService;
@@ -70,7 +70,7 @@ describe('MaskService', () => {
             original = '1111111111111111111111111111111111';
             masked = maskService.maskPhone(original);
             expect(masked).to.equal('(111) 111 1111');
-            
+
         });
     });
 
@@ -175,7 +175,7 @@ describe('MaskService', () => {
 
             original = '1111111111111111111111111111111111111';
             masked = maskService.maskDate(original);
-            expect(masked).to.equal('11/11/1111');            
+            expect(masked).to.equal('11/11/1111');
         });
     });
 

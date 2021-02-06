@@ -3,15 +3,19 @@
     "target": "es6",
     "module": "commonjs",
     "moduleResolution": "node",
-    "sourceMap": true,
+    "importHelpers": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "removeComments": true,
     "noImplicitAny": false,
-    "outDir": "dist"
+    "outDir": "../../dist/server/",
+    "typeRoots": [
+      "../../node_modules/@types/"
+    ]
   },
   "exclude": [
     "tests/",
-    "**/*.spec"
+    "**/*.spec",
+    "../../node_modules/"
   ]
 }

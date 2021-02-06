@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {FloorNumberPipe} from '@pipes/index';
+import {FloorNumberPipe} from '@pipes';
 
 describe('FloorNumberPipe', () => {
 

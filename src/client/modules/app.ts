@@ -4,7 +4,7 @@ import {BrowserModule, BrowserTransferStateModule} from '@angular/platform-brows
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {SharedModule} from '@modules/shared';
 import {AppComponent} from '@components/app/component';
-import {IsLoggedInGuard, NotLoggedInGuard} from '@guards/index'
+import {IsLoggedInGuard, NotLoggedInGuard} from '@guards'
 
 @NgModule({
     bootstrap: [

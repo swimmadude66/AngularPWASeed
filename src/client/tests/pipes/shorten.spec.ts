@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {ShortenTextPipe} from '@pipes/index';
+import {ShortenTextPipe} from '@pipes';
 
 describe('ShortenPipe', () => {
 
