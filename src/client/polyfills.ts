@@ -2,7 +2,7 @@
 * BROWSER POLYFILLS
 */
 
-import 'classlist';
+// import 'classlist';
 
 /** IE9, IE10 and IE11 requires all of the following polyfills. **/
 import 'core-js';
