@@ -1,12 +1,15 @@
-const {src, dest, series, watch, parallel} = require('gulp');
-const {join} = require('path');
-const {spawn} = require('child_process');
-const webpack = require('webpack');
-const browserSync = require('browser-sync-webpack-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+import {src, dest, series, watch, parallel} from 'gulp';
+import {join} from 'path';
+import {spawn, ChildProcess} from 'child_process';
+import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
+import {createProject} from 'gulp-typescript';
+import * as webpack from 'webpack';
+
+const  browserSync = require('browser-sync-webpack-plugin');
+
 const webpackConfig = require('./webpack.config');
-const ts_project = require('gulp-typescript').createProject('./src/server/tsconfig.json');
-let server_proc;
+const ts_project= createProject('./src/server/tsconfig.json');
+let server_proc: ChildProcess;
 
 function compileNode() {
     return src('./src/server/**/*.ts')
@@ -16,14 +19,21 @@ function compileNode() {
 
 function startServer(cb) {
     if (server_proc) {
-        server_proc.kill();
-        server_proc = undefined;
+        server_proc.kill('SIGTERM');
+        server_proc.once('exit', (code, signal) => {
+            server_proc = spawn('node', ['--inspect=5858', 'dist/server/app.js'], {
+                cwd: __dirname,
+                stdio: [0, 1, 2, 'ipc']
+            });
+            return cb();
+        });
+    } else {
+        server_proc = spawn('node', ['--inspect=5858', 'dist/server/app.js'], {
+            cwd: __dirname,
+            stdio: [0, 1, 2, 'ipc']
+        });
+        return cb();
     }
-    server_proc = spawn('node', ['--inspect=5858', 'dist/server/app.js'], {
-        cwd: __dirname,
-        stdio: [0, 1, 2, 'ipc']
-    });
-    return cb();
 }
 
 function watchServer() {
@@ -118,11 +128,13 @@ function watchWebpack(done) {
 }
 
 const build = parallel(compileNode, runWebpack);
+const devServer = series(compileNode, startServer, watchServer);
 
 exports.compileNode = compileNode;
 exports.startServer = series(compileNode, startServer);
 exports.webpack = runWebpack;
 exports.analyze = analyzeWebpack;
 exports.build = build;
-exports.watch = parallel(watchWebpack, series(compileNode, startServer, watchServer));
+exports.devServer = devServer;
+exports.watch = parallel(watchWebpack, devServer);
 exports.default = build;

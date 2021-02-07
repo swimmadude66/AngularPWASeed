@@ -13,7 +13,11 @@ const config = {
         filename: '[name].spec.js',
     },
     resolve: {
-        extensions: ['.ts', '.js', '.json', '.scss', '.css']
+        extensions: ['.ts', '.js', '.json', '.scss', '.css'],
+        mainFields: ['module', 'browser', 'main'],
+        alias: {
+            '/assets': path.join(__dirname, './src/client/assets')
+        }
     },
     module: {
         rules: [
@@ -33,7 +37,7 @@ const config = {
             },
             {
                 test: /\.(ts|js)$/,
-                loaders: [
+                use: [
                   'angular-router-loader'
                 ]
             },
@@ -167,15 +171,15 @@ const config = {
                 ]
             },
             // coverage
-            {
-                test: /\.ts$/i,
-                exclude: /\.spec\.ts$/,
-                enforce: 'post',
-                use: {
-                    loader: 'istanbul-instrumenter-loader',
-                    options: { esModules: true }
-                }
-            }
+            // {
+            //     test: /\.ts$/i,
+            //     exclude: /\.spec\.ts$/,
+            //     enforce: 'post',
+            //     use: {
+            //         loader: 'istanbul-instrumenter-loader',
+            //         options: { esModules: true }
+            //     }
+            // }
         ]
     },
     plugins: [

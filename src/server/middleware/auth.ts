@@ -28,7 +28,7 @@ module.exports = (APP_CONFIG: Config) => {
                 sig = authParts[1];
             }
             if (body.length && sig.length) {
-                const hmac = createHmac('sha512', APP_CONFIG.cookie_secret);
+                const hmac = createHmac('sha512', process.env.COOKIE_SECRET || 'cookie_secret');
                 const sigCompare = hmac.update(body).digest('base64');
                 if (sigCompare === sig) {
                     accessToken = body;

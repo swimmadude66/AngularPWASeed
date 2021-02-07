@@ -21,15 +21,16 @@ module.exports = function(config) {
         // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
         preprocessors: {
             'src/client/tests/index.ts': ['webpack', 'sourcemap'],
+            // 'src/client/**/*.ts': ['coverage']
         },
         proxies: {
             '/assets': '/base/src/client/assets',
         },
         webpack: require('./webpack.config.test'),
-        coverageIstanbulReporter: {
-            reports: [ 'lcov', 'text-summary' ],
-            dir: 'reports/client/coverage',
-            fixWebpackSourcePaths: true,
+        coverageReporter: {
+            type : 'lcov',
+            dir : 'reports/client/coverage',
+            includeAllSources: true
         },
         webpackMiddleware: {
             noInfo: true,
@@ -40,7 +41,7 @@ module.exports = function(config) {
         // test results reporter to use
         // possible values: 'dots', 'progress'
         // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-        reporters: ['mocha', 'coverage-istanbul'],
+        reporters: ['mocha', 'coverage'],
         // web server port
         port: 9876,
         // enable / disable colors in the output (reporters and logs)

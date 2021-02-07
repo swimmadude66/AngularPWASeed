@@ -71,7 +71,7 @@ export class DatabaseService {
             switchMap(connection => this._beginTransaction(connection))
         );
     }
-    
+
 
     connectionCommit(conn: Connection): Observable<Connection> {
         return Observable.create(obs => {
@@ -96,6 +96,15 @@ export class DatabaseService {
 
     escape(value) {
         return mysqlEscape(value);
+    }
+
+    cleanup(): Observable<any> {
+        return new Observable(obs => {
+            this._pool.end(() => {
+                obs.next('mysql pool closed');
+                obs.complete();
+            });
+        });
     }
 
     private _beginTransaction(conn: Connection): Observable<Connection> {

@@ -1,7 +1,7 @@
 import { Writable } from 'stream';
-import { isMaster } from 'cluster';
+import * as cluster from 'cluster';
 // A simple base logging service.
-// To make a custom logger, extends this class and 
+// To make a custom logger, extends this class and
 // overwrite any applicable methods
 export class LoggingService {
 
@@ -16,13 +16,28 @@ export class LoggingService {
             }
             return true
         };
+
+        cluster.on('message', (worker, messages, handle) => {
+            if (Array.isArray(messages) && messages.shift() === 'console') {
+                this.log(`[ worker ${worker.id} ]:`, ...messages);
+            }
+        });
     }
 
     log(...messages: any[]): void {
-        if (isMaster) {
+        if (cluster.isMaster) {
             console.log(...messages);
         } else {
-            process.send(['console', ...messages]);
+            if (cluster.worker.isConnected()) {
+                try {
+                    process.send(['console', ...messages]);
+                }
+                catch (e) {
+                    console.log(`[ worker ${cluster.worker.id} ]:`, ...messages);
+                }
+            } else {
+                console.log(`[ worker ${cluster.worker.id} ]:`, ...messages);
+            }
         }
     }
 
@@ -49,7 +64,7 @@ export class LoggingService {
             tokens.method(req, res),
             tokens.url(req, res),
             tokens.status(req, res),
-            tokens.res(req, res, 'content-length'), 
+            tokens.res(req, res, 'content-length'),
             '-',
             tokens['response-time'](req, res), 'ms'
         ].join(' ');

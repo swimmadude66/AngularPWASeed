@@ -7,7 +7,9 @@ import {UserSession, SessionInfo} from '../models/auth';
 const EXPIRATION_MILLISECONDS = (30 * 24 * 60 * 60 * 1000); // 30 day expiration for now
 
 export class SessionManager {
-    constructor (private _db: DatabaseService) {}
+    constructor (
+        private _db: DatabaseService
+    ) {}
 
     getActiveSessions(userId: string): Observable<SessionInfo[]> {
         return this._db.query<SessionInfo[]>('Select * from `sessions` where `UserId`=? AND `Active`=1', [userId])
