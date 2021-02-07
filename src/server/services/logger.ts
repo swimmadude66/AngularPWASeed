@@ -26,6 +26,9 @@ export class LoggingService {
 
     log(...messages: any[]): void {
         if (cluster.isMaster) {
+            if (messages.length && !/^\[ (m|w)/i.test(messages[0])) {
+                messages.unshift(`[ master ]:`);
+            }
             console.log(...messages);
         } else {
             if (cluster.worker.isConnected()) {

@@ -108,13 +108,13 @@ export class DatabaseService {
     }
 
     private _beginTransaction(conn: Connection): Observable<Connection> {
-        return Observable.create(obs => {
+        return new Observable(obs => {
             conn.beginTransaction((err) => {
                 if (err) {
                     return obs.error(err);
                 }
                 obs.next(conn);
-                return obs.complete(conn);
+                obs.complete();
             });
         });
     }

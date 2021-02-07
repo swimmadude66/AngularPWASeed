@@ -1,7 +1,8 @@
 import * as cluster from 'cluster';
+import * as inspector from 'inspector';
 import { Server } from 'net';
-import { BehaviorSubject, forkJoin, Observable, of } from 'rxjs';
-import { distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, forkJoin, Observable, of, race, timer } from 'rxjs';
+import { distinctUntilChanged, switchMap, take, tap } from 'rxjs/operators';
 import { LoggingService } from './logger';
 
 const EXIT_SIGNALS: string[] = [
@@ -17,8 +18,6 @@ export class HealthService {
 
   private _servers: Server[] = [];
   private _services = [];
-
-  private _timeouts = {};
   private _listeners = [];
 
   constructor(
@@ -33,6 +32,30 @@ export class HealthService {
         })
       );
     });
+
+    if (cluster.isWorker) {
+      cluster.worker.on('message', (msg) => {
+        if (EXIT_SIGNALS.indexOf(msg) >= 0) {
+          if (!this._isHealthy.value) {
+            this._logger.log(`${msg} ignored. Process is already terminating`);
+            return;
+          }
+          this._isHealthy.next(false);
+          this._logger.log(`shutting down...`);
+          this._cleanup(msg)
+          .subscribe(
+            _ => {
+              this._logger.log('Goodbye.');
+              process.exit(0);
+            },
+            err => {
+              this._logger.logError(err);
+              this._logger.log('Goodbye.');
+              process.exit(1);
+          });
+        }
+      });
+    }
   }
 
   setHealthy(isHealthy: boolean) {
@@ -71,18 +94,28 @@ export class HealthService {
     return alive;
   }
 
-  private _cleanup(signal: string) {
+  private _cleanup(signal) {
+    if (inspector && inspector.url()) {
+      this._logger.log('closing inspector');
+      inspector.close();
+    }
     if (cluster.isMaster) {
       return forkJoin([
         of(true),
         ...(this._servers.map(s => this._closeServer(s)))
       ]).pipe(
         switchMap(_ => {
-          const workers = this.getLivingWorkers() || [];
-          return forkJoin([
-            of(true),
-            ...(workers.map(w => this._cleanupWorker(w, signal)))
-          ]);
+          return race(
+            this._cleanupWorkers(signal),
+            timer(10 * 1000)
+            .pipe(
+              take(1),
+              tap(_ => {
+                this._logger.log('[ master ]: Workers took too long to shut down');
+                this.getLivingWorkers().forEach(w => w.kill('SIGKILL'));
+              })
+            )
+          );
         }),
         switchMap(_ => {
           return forkJoin([
@@ -108,24 +141,25 @@ export class HealthService {
   }
 
   private _handleExitSignal(signal: string) {
-    if (!this._isHealthy.value) {
-      this._logger.log(`${signal} ignored. Process is already terminating`);
+    if (cluster.isMaster) {
+      if (!this._isHealthy.value) {
+        this._logger.log(`${signal} ignored. Process is already terminating`);
+        return;
+      }
+      this._isHealthy.next(false);
+      this._logger.log(`[ master ]: caught ${signal}. shutting down...`);
+      this._cleanup(signal)
+      .subscribe(_ => {
+        this._logger.log(`[ master ]: Goodbye.`);
+        process.exit(0)
+      }, err => {
+        this._logger.logError(err);
+        process.exit(1);
+      });
+    } else {
+      // workers wait to die
       return;
     }
-    this._isHealthy.next(false);
-    this._logger.log(`${cluster.isMaster ? '[ master ]: ' : ''}caught ${signal}. shutting down...`);
-    this._cleanup(signal)
-    .subscribe(_ => {
-      if (cluster.isMaster) {
-        this._logger.log(`[ master ]: Goodbye.`);
-      } else {
-        this._logger.log(`Goodbye.`);
-      }
-      process.exit(0)
-    }, err => {
-      this._logger.logError(err);
-      process.exit(1);
-    });
   }
 
   private _closeServer(server: Server): Observable<any> {
@@ -137,23 +171,38 @@ export class HealthService {
     });
   }
 
-  private _cleanupWorker(worker: cluster.Worker, signal: string): Observable<any> {
+  private _cleanupWorkers(signal): Observable<any> {
+    if (!cluster.isMaster) {
+      return of(true);
+    }
+    this.getLivingWorkers().forEach(w => {
+      w.send(signal);
+    });
     return new Observable(obs => {
-      worker.on('exit', (code, signal) => {
-        if (this._timeouts[worker.id]) {
-          clearTimeout(this._timeouts[worker.id]);
-        }
-        obs.next(`${worker.id} exited`);
+      cluster.disconnect(() => {
+        obs.next(true);
         obs.complete();
       });
-
-      worker.kill(signal);
-      this._timeouts[worker.id] = setTimeout(() => {
-        this._logger.log('worker shutdown time expired. forcefully killing worker', worker.id);
-        worker.process.kill('SIGKILL');
-      }, 6000); // based on maximum `keep-alive` timeout
     });
   }
+
+  // private _cleanupWorker(worker: cluster.Worker, signal: string): Observable<any> {
+  //   return new Observable(obs => {
+  //     worker.on('exit', (code, signal) => {
+  //       if (this._timeouts[worker.id]) {
+  //         clearTimeout(this._timeouts[worker.id]);
+  //       }
+  //       obs.next(`${worker.id} exited`);
+  //       obs.complete();
+  //     });
+
+  //     worker.kill(signal);
+  //     this._timeouts[worker.id] = setTimeout(() => {
+  //       this._logger.log('worker shutdown time expired. forcefully killing worker', worker.id);
+  //       worker.process.kill('SIGKILL');
+  //     }, 6000); // based on maximum `keep-alive` timeout
+  //   });
+  // }
 
   private _cleanupService(service): Observable<any> {
     if (service && service.cleanup) {
