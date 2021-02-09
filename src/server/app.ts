@@ -35,7 +35,6 @@ const APP_CONFIG: Config = {
 
 APP_CONFIG.healthService.init();
 
-
 if (cluster.isMaster) {
     const numCPUs = Math.max(2, Math.min(cpus().length, APP_CONFIG.max_workers));
     loggingService.log('[ master ]: App starting on port', APP_CONFIG.port);
@@ -56,12 +55,6 @@ if (cluster.isMaster) {
         loggingService.log(`[ worker ${worker.id} ]: Ready and Listening`);
         APP_CONFIG.healthService.setHealthy(true);
     });
-
-
-    // process.on('exit', () => {
-    //     console.log('[ master ]: killing workers');
-    //     workers.forEach((worker) => worker.kill());
-    // });
 
 } else {
     const app = express();
@@ -84,7 +77,7 @@ if (cluster.isMaster) {
             res.set('connection', 'close');
         }
         return next();
-    })
+    });
 
     // redirect http to https
     app.use(require('./middleware/httpredir')(APP_CONFIG));
@@ -115,8 +108,8 @@ if (cluster.isMaster) {
             let httpshost = `https://${req.headers.host}${req.url}`;
             return res.redirect(httpshost);
         });
-        APP_CONFIG.healthService.registerServer(redir);
         redir = redirApp.listen(80);
+        APP_CONFIG.healthService.registerServer(redir);
     } else {
         server = createServer(app);
     }
