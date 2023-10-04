@@ -101,7 +101,7 @@
     "mocha": "8.2.1",
     "normalize-scss": "7.0.1",
     "nyc": "15.1.0",
-    "postcss": "8.2.4",
+    "postcss": "8.4.31",
     "postcss-loader": "5.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
